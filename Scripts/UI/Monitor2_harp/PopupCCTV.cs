@@ -26,11 +26,6 @@ public class PopupCCTV : MonoBehaviour
     public GameObject btnPause = null;
     private bool isEventRegistered = false;
 
-    [Header("CCTV Settings")]
-    public string cctvBaseUrl;
-    public string cctvUsername = "admin";
-    public string cctvPassword = "HNS_qhdks_!Q@W3";
-
     private void OnEnable()
     {
         // 팝업 열릴 때 버튼 상태 초기화
@@ -97,119 +92,6 @@ public class PopupCCTV : MonoBehaviour
 
     private async Task SendPTZCommandAsync(string direction, int speed, int timeout)
     {
-        // 담당자가 제공한 형식: http://username:password@host:port/path
-        string baseUrl = cctvBaseUrl;
-        if (!baseUrl.StartsWith("http://") && !baseUrl.StartsWith("https://"))
-        {
-            baseUrl = "http://" + baseUrl;
-        }
-
-        // URL에서 호스트 부분만 추출
-        string hostPart = baseUrl.Replace("http://", "").Replace("https://", "");
-
-        // 담당자 제공 형식으로 URL 구성
-        string requestUrl = $"http://{cctvUsername}:{cctvPassword}@{hostPart}/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}";
-
-        Debug.Log($"Sending PTZ request (format check): http://***:***@{hostPart}/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}");
-
-        try
-        {
-            // UnityWebRequest 사용으로 변경 (Unity에서 더 안정적)
-            UnityWebRequest www = UnityWebRequest.Get(requestUrl);
-            www.timeout = 10; // 10초 타임아웃
-
-            var operation = www.SendWebRequest();
-
-            // 비동기 대기
-            while (!operation.isDone)
-            {
-                await Task.Yield();
-            }
-
-            if (www.result == UnityWebRequest.Result.Success)
-            {
-                Debug.Log($"PTZ Command Sent to {baseUrl}: {direction} - Response: {www.downloadHandler.text}");
-
-                // PTZ 명령 후 비디오 리프레시 시도
-                await RefreshVideoStreamAsync();
-            }
-            else
-            {
-                Debug.LogError($"PTZ Command Failed: {www.error}");
-            }
-
-            www.Dispose();
-        }
-        catch (Exception ex)
-        {
-            Debug.Log($"Error sending PTZ command to {baseUrl}: {ex.Message}");
-
-            // HttpClient를 백업으로 시도
-            await TryHttpClientRequest(direction, speed, timeout, hostPart);
-        }
-    }
-
-    private async Task TryHttpClientRequest(string direction, int speed, int timeout, string hostPart)
-    {
-        try
-        {
-            HttpClient client = new HttpClient();
-
-            // Basic Authentication 헤더 설정
-            var byteArray = Encoding.ASCII.GetBytes($"{cctvUsername}:{cctvPassword}");
-            client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-
-            string backupUrl = $"http://{hostPart}/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}";
-
-            HttpResponseMessage response = await client.GetAsync(backupUrl);
-            response.EnsureSuccessStatusCode();
-
-            string responseBody = await response.Content.ReadAsStringAsync();
-            Debug.Log($"Backup HttpClient PTZ Command Success: {direction} - Response: {responseBody}");
-
-            await RefreshVideoStreamAsync();
-
-            client.Dispose();
-        }
-        catch (Exception ex)
-        {
-            Debug.LogError($"Backup HttpClient also failed: {ex.Message}");
-        }
-    }
-
-    // 비디오 스트림 리프레시를 위한 메서드
-    private async Task RefreshVideoStreamAsync()
-    {
-        try
-        {
-            // 잠시 대기 후 비디오 플레이어 리프레시
-            await Task.Delay(100);
-
-            if (video != null && video.isActiveAndEnabled)
-            {
-                // 현재 재생 위치 저장
-                bool wasPlaying = video.IsPlaying;
-
-                // 비디오 리로드
-                video.Stop();
-                await Task.Delay(50);
-
-                if (wasPlaying)
-                {
-                    video.Play();
-                }
-
-                Debug.Log("Video stream refreshed after PTZ command");
-            }
-        }
-        catch (Exception ex)
-        {
-            Debug.Log($"Error refreshing video stream: {ex.Message}");
-        }
-    }
-
-    /*private async Task SendPTZCommandAsync(string direction, int speed, int timeout)
-    {
         //string requestUrl = $"http://115.91.85.42:50081/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}";
         string requestUrl = $"http://192.168.1.109:50081/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}";
         //url2 = $"http://192.168.1.108:50080/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}";
@@ -245,7 +127,7 @@ public class PopupCCTV : MonoBehaviour
                 Console.WriteLine($"Exception: {ex.Message}");
             }
         
-        *//*
+        /*
         string requestUrl = $"http://115.91.85.42:50081/httpapi/SendPTZ?action=sendptz&PTZ_CHANNEL=1&PTZ_MOVE={direction},{speed}&PTZ_TIMEOUT={timeout}";
         UnityWebRequest www = UnityWebRequest.Get(requestUrl);
         www.SetRequestHeader("Authorization", "admin:HNS_qhdks_!Q@W3");
@@ -254,8 +136,8 @@ public class PopupCCTV : MonoBehaviour
         var byteArray = Encoding.ASCII.GetBytes("admin:HNS_qhdks_!Q@W3");
                 client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
 
-        *//*
-    }*/
+        */
+    }
 
 
 }
