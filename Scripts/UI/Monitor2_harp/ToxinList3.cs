@@ -38,9 +38,16 @@ internal class ToxinList3 : MonoBehaviour
         allItems.AddRange(qualityItems);
         allItems.AddRange(chemicalItems);
 
-        //Debug.Log($"toxinItems : {toxinItems.Count}");
-        //Debug.Log($"qualityItems : {qualityItems.Count}")  ;
-        //Debug.Log($"chemicalItems : {chemicalItems.Count}");
+        Debug.Log($"toxinItems : {toxinItems.Count}");
+        Debug.Log($"qualityItems : {qualityItems.Count}")  ;
+        Debug.Log($"chemicalItems : {chemicalItems.Count}");
+    }
+
+    private void Update()
+    {
+        qualityItems.ForEach(item => {
+            item.SetAmount();
+        });
     }
 
     private void OnNavigateObs(object obj)
@@ -60,6 +67,27 @@ internal class ToxinList3 : MonoBehaviour
 
         allItems.ForEach(bar => bar.SetAmount());
     }
+
+    /* private void OnLoadSetting(object data)
+     {
+         List<ToxinData> toxinDatas = modelProvider.GetToxins();
+
+         Debug.Log($"=== ToxinList3 OnLoadSetting ===");
+         Debug.Log($"전체 센서: {toxinDatas.Count}개");
+
+         var qualityBoard = toxinDatas.Where(item => item.boardid == 3).ToList();
+         Debug.Log($"수질 센서: {qualityBoard.Count}개");
+
+         for (int i = 0; i < qualityBoard.Count; i++)
+         {
+             var q = qualityBoard[i];
+             Debug.Log($"수질[{i}]: hnsid={q.hnsid}, name={q.hnsName}, on={q.on}, values.Count={q.values?.Count ?? 0}");
+         }
+
+         Debug.Log($"qualityItems UI 개수: {qualityItems.Count}");
+
+         ApplySensorList(toxinDatas);
+     }*/
 
     private void OnLoadSetting(object data)
     {
@@ -107,7 +135,7 @@ internal class ToxinList3 : MonoBehaviour
         qualityBoard = toxins.Where(item => item.boardid == 3).ToList();
 
 
-        allItems.ForEach(item => item.gameObject.SetActive(false));
+        //allItems.ForEach(item => item.gameObject.SetActive(false));
         ApplySensorListBoard(toxinBoard, toxinItems);
         ApplySensorListBoard(chemicalBoard, chemicalItems);
         ApplySensorListBoard(qualityBoard, qualityItems);
@@ -126,6 +154,7 @@ internal class ToxinList3 : MonoBehaviour
 
             for (int i = 0; i < needToAddCount; i++)
             {
+
                 GameObject obj = Instantiate(itemPrefab, itemsParent);
                 ArcBar newItem = obj.GetComponent<ArcBar>();
                 items.Add(newItem);

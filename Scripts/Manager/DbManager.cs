@@ -318,7 +318,12 @@ public class DbManager : MonoBehaviour
             entity.ForEach(item =>
                 curDatas.Add(item));
 
+
         }));
+        curDatas = curDatas.Where(current =>
+        !(current.boardidx == 2 && current.hnsidx > 19) && // 화학물질 센서 19개로 제한
+        !(current.boardidx == 3 && current.hnsidx > 4)     // 수질 센서 4개로 제한
+    ).ToList();
         callback(curDatas);
     }
     IEnumerator GetToxinDataFunc(int obsId, Action<List<ToxinData>> callback)
@@ -337,7 +342,12 @@ public class DbManager : MonoBehaviour
 
         }));
 
-        toxinDatas = toxinDatas.Where(toxin => !(toxin.boardid == 2 && toxin.hnsid > 19)).ToList();
+        // 필터링 적용
+        toxinDatas = toxinDatas.Where(toxin =>
+            !(toxin.boardid == 2 && toxin.hnsid > 19) && // 화학물질 센서 19개로 제한
+            !(toxin.boardid == 3 && toxin.hnsid > 4)     // 수질 센서 4개로 제한
+        ).ToList();
+
 
         callback(toxinDatas);
     }
@@ -533,15 +543,15 @@ public class DbManager : MonoBehaviour
     {
         switch (code.Trim())
         {
-            case "0020":
+            case "20":
                 return 1;
-            case "0021":
+            case "21":
                 return 2;
-            case "0023":
+            case "23":
                 return 3;
-            case "0024":
+            case "24":
                 return 4;
-            case "0025":
+            case "25":
                 return 5;
             default:
                 return 5;

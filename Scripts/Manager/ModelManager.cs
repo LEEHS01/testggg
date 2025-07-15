@@ -102,16 +102,42 @@ public class ModelManager : MonoBehaviour, ModelProvider
     #region [Processing]
     void GetTrendValueProcess() 
     {
+        Debug.Log($"=== GetTrendValueProcess 시작 ===");
+        Debug.Log($"currentObsId: {currentObsId}");
+        Debug.Log($"기존 toxins 개수: {toxins.Count}");
         dbManager.GetToxinValueLast(currentObsId, currents =>
         {
+            foreach (var item in currents)
+            {
+                Debug.Log($"{item.boardidx}/{item.hnsidx} : {item.useyn} {item.fix}");
+            }
             if (currents.Count != toxins.Count) Debug.LogWarning("ModelManager - GetTrendValueProcess : currents와 toxins 간의 길이 불일치.");
 
-            for (int i = 0; i < toxins.Count; i++) 
+
+            toxins.ForEach(toxin =>
             {
-                ToxinData toxin = toxins[i];
-                CurrentDataModel current = currents[i];
-                toxin.UpdateValue(current);
-            }
+                var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                if (curr == null) throw new Exception("Cant find!");
+
+                toxin.UpdateValue(curr);
+            });
+
+
+            //for (int i = 0; i < toxins.Count; i++) 
+            //{
+            //    ToxinData toxin = toxins[i];
+            //    CurrentDataModel current = currents[i];
+
+
+            //    if (current.hnsidx == 4 && current.boardidx == 3)
+            //    {
+            //        Debug.LogError($"GetToxinValueLast {current.GetHashCode()} {toxin.on} {current.useyn}");
+
+            //        Debug.Log($"{toxin.boardid}/{toxin.hnsid} : {toxin.on} {toxin.fix}");
+            //        Debug.Log($"{current.boardidx}/{current.hnsidx} : {current.useyn} {toxin.fix}");
+            //    }
+            //        toxin.UpdateValue(current);
+            //}
             uiManager.Invoke(UiEventType.ChangeTrendLine);
         });
 
@@ -178,10 +204,11 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
         dbManager.GetSensorStep(currentObsId, step =>
         {
-            if(Option.ENABLE_DEBUG_CODE)
+            uiManager.Invoke(UiEventType.ChangeSensorStep, step);
+            /*if(Option.ENABLE_DEBUG_CODE)
                 uiManager.Invoke(UiEventType.ChangeSensorStep, (DateTime.Now.Second / 5) % 5 + 1);
             else
-                uiManager.Invoke(UiEventType.ChangeSensorStep, step);
+                uiManager.Invoke(UiEventType.ChangeSensorStep, step);*/
             //DEBUG! 25초 주기로 1~5 순회
 
         });
@@ -213,6 +240,89 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     }
 
+    /*private void OnNavigateObs(object obj)
+    {
+        if (obj is not int obsId) return;
+
+        currentObsId = obsId;
+
+        dbManager.GetToxinData(obsId, toxins =>
+        {
+            DateTime endTime = Option.ENABLE_DEBUG_CODE ? DateTime.Now.AddDays(20) : DateTime.Now;
+            DateTime startTime = endTime.AddDays(-1);
+
+            dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
+            {
+                toxins.ForEach(model =>
+                {
+                    if (chartDatas.Count <= 0) Debug.LogWarning("OnNavigateObs : 얻은 데이터의 원소 수가 0입니다. 차트를 정상적으로 표시할 수 없습니다. \nDB에 존재하지 않는 값이나 잘못된 범위를 지정했습니다.");
+
+                    var values = chartDatas
+                        .Where(t => t.boardidx == model.boardid && t.hnsidx == model.hnsid)
+                        .Select(t => t.val).ToList();
+
+                    int nodeCount = (int)((endTime - startTime) / TimeSpan.FromMinutes(Option.TREND_TIME_INTERVAL));
+
+                    while (values.Count < nodeCount)
+                        values.Insert(0, 0f);
+
+                    model.values = values;
+                });
+
+                // 추가: 실시간 값도 즉시 가져오기
+                dbManager.GetToxinValueLast(obsId, currents =>
+                {
+                    foreach (ToxinData toxin in toxins)
+                    {
+                        CurrentDataModel current = currents.FirstOrDefault(c =>
+                            c.boardidx == toxin.boardid && c.hnsidx == toxin.hnsid);
+
+                        if (current != null)
+                        {
+                            toxin.UpdateValue(current); // 실시간 값 추가
+                            Debug.Log($"초기 실시간 값 설정: 보드{toxin.boardid} 센서{toxin.hnsid} {toxin.hnsName} = {current.val}");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"초기 실시간 값 없음: 보드{toxin.boardid} 센서{toxin.hnsid} {toxin.hnsName}");
+                        }
+                    }
+
+                    // 알람 상태 반영
+                    logDataList.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
+                    {
+                        if (ala.status == 0)
+                        {
+                            toxins
+                            .Where(t => t.boardid == ala.boardId && t.status != ToxinStatus.Red).ToList()
+                            .ForEach(t => t.status = ToxinStatus.Yellow);
+                        }
+                        else
+                        {
+                            toxins
+                            .FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId)
+                            .status = ToxinStatus.Red;
+                        }
+                    });
+
+                    currentObsId = obsId;
+
+                    this.toxins.Clear();
+                    this.toxins.AddRange(toxins);
+
+                    // UI 업데이트
+                    UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
+                    UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
+
+                    var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
+                    if (defaultSensor != null)
+                    {
+                        UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
+                    }
+                });
+            });
+        });
+    }*/
     private void OnNavigateObs(object obj)
     {
         if (obj is not int obsId) return;
@@ -221,11 +331,12 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
         dbManager.GetToxinData(obsId, toxins =>
         {
-            DateTime endTime = Option.ENABLE_DEBUG_CODE? DateTime.Now.AddDays(20) : DateTime.Now;
+            DateTime endTime = Option.ENABLE_DEBUG_CODE ? DateTime.Now.AddDays(20) : DateTime.Now;
             DateTime startTime = endTime.AddDays(-1);
 
             dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
+
                 toxins.ForEach(model =>
                 {
                     if (chartDatas.Count <= 0) Debug.LogWarning("OnNavigateObs : 얻은 데이터의 원소 수가 0입니다. 차트를 정상적으로 표시할 수 없습니다. \nDB에 존재하지 않는 값이나 잘못된 범위를 지정했습니다.");

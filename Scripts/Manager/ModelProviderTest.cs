@@ -82,8 +82,8 @@ public class ModelProviderTest : ModelProvider
     void MakingTestvaluesRoutine()
     {
         //Debug.LogError("MakingTestvaluesRoutine");
-        toxinsQuality.ForEach(item => item.UpdateValue(null));
-        DOVirtual.DelayedCall(1f, MakingTestvaluesRoutine);
+        //toxinsQuality.ForEach(item => item.UpdateValue(null));
+        //DOVirtual.DelayedCall(1f, MakingTestvaluesRoutine);
     }
 
 

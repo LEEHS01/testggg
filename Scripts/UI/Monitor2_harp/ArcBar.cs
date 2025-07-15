@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TMPro;
 using Unity.Burst.Intrinsics;
+using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -24,6 +25,10 @@ internal class ArcBar : MonoBehaviour
     ToxinData data;
 
     Button btnSelectToxin;
+
+    public string DATA_NAME;
+    public bool DATA_USE;
+
 
     private void Start()
     {
@@ -50,6 +55,7 @@ internal class ArcBar : MonoBehaviour
 
     public void SetValue(ToxinData toxin)
     {
+        Debug.LogError($"toxin3 : {toxin.hnsName} {toxin.on} {toxin.fix}");
         gameObject.SetActive(toxin.on);
         data = toxin;
 
@@ -59,6 +65,8 @@ internal class ArcBar : MonoBehaviour
         txtMin.text = "0";
         txtMax.text = toxin.warning.ToString();
 
+        DATA_NAME = toxin.hnsName.ToString();
+        DATA_USE = toxin.on;
 
     }
 
@@ -66,11 +74,13 @@ internal class ArcBar : MonoBehaviour
     public void SetAmount()
     {
         if (data == null) return;
-        txtCurrent.text =  data.GetLastValue().ToString();
-        txtProgress.text = data.GetLastValue().ToString();
+        txtCurrent.text =  data.GetLastValue().ToString("F2");
+        txtProgress.text = data.GetLastValue().ToString("F1");
         gameObject.SetActive(data.on);
 
         arc.DOFillAmount((float)(data.GetLastValuePercent()), 1);
+        DATA_NAME = data.hnsName.ToString();
+        DATA_USE = data.on;
     }
 
     // 센서 선택 이벤트 - UiManager로 전달

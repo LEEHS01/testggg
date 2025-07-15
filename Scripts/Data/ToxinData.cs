@@ -53,11 +53,15 @@ namespace Onthesys
             //Debug.Log("ToxinData.UpdateValue");
             if (model != null)
             {
+                /*if (hnsid == 4 && boardid == 3)
+                    Debug.LogError($"UpdateValue bef{this.on} {model.useyn}");*/
                 this.serious = model.hi;
                 this.warning = model.hihi;
                 this.on = Convert.ToInt32(model.useyn) == 1;
                 this.fix = Convert.ToInt32(model.fix) == 1;
                 this.SetLastValue(model.val);
+                /*if (hnsid == 4 && boardid == 3)
+                    Debug.LogError($"UpdateValue aft {this.on} {model.useyn}");*/
             }
         }
 

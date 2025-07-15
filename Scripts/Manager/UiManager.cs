@@ -16,8 +16,8 @@ using static UiManager;
 public class UiManager : MonoBehaviour
 {
     //테스트용 코드. 가짜 보드3 데이터를 입력하기 위한 조치로 DB에 해당 데이터 입력이 들어온다면
-    //public ModelProvider modelProvider => ModelManager.Instance;
-    //위와 같이 복구할 예정
+    public ModelProvider modelProvider => ModelManager.Instance;
+    /*//위와 같이 복구할 예정
     public ModelProvider mp = null;
     public ModelProvider modelProvider
     {
@@ -26,7 +26,7 @@ public class UiManager : MonoBehaviour
             if (mp == null) mp = new ModelProviderTest(ModelManager.Instance);
             return mp;
         }
-    }
+    }*/
 
     public static UiManager Instance = null;
     private void Awake()
