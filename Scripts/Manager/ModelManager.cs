@@ -1,4 +1,5 @@
-﻿using DG.Tweening;
+﻿using Assets.Scripts.Data;
+using DG.Tweening;
 using Onthesys;
 using System;
 using System.Collections.Generic;
@@ -11,9 +12,9 @@ using Unity.VisualScripting;
 using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using static Unity.Burst.Intrinsics.X86;
-using static UnityEditor.Progress;
-using static UnityEngine.EventSystems.EventTrigger;
-using static UnityEngine.InputManagerEntry;
+//using static UnityEditor.Progress;
+//using static UnityEngine.EventSystems.EventTrigger;
+//using static UnityEngine.InputManagerEntry;
 
 public class ModelManager : MonoBehaviour, ModelProvider
 {
@@ -107,10 +108,10 @@ public class ModelManager : MonoBehaviour, ModelProvider
         Debug.Log($"기존 toxins 개수: {toxins.Count}");
         dbManager.GetToxinValueLast(currentObsId, currents =>
         {
-            foreach (var item in currents)
+            /*foreach (var item in currents)
             {
                 Debug.Log($"{item.boardidx}/{item.hnsidx} : {item.useyn} {item.fix}");
-            }
+            }*/
             if (currents.Count != toxins.Count) Debug.LogWarning("ModelManager - GetTrendValueProcess : currents와 toxins 간의 길이 불일치.");
 
 
@@ -191,7 +192,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             }
         });
 
-        DOVirtual.DelayedCall(1, GetAlarmChangedProcess);
+        DOVirtual.DelayedCall(30, GetAlarmChangedProcess);
     }
 
     void GetStepProcess() 
@@ -326,17 +327,23 @@ public class ModelManager : MonoBehaviour, ModelProvider
     private void OnNavigateObs(object obj)
     {
         if (obj is not int obsId) return;
+        //Debug.Log($"=== OnNavigateObs 디버그 ===");
+        //Debug.Log($"전달받은 obsId: {obsId}");
+        //Debug.Log($"이전 currentObsId: {currentObsId}");
 
         currentObsId = obsId;
-
+       // Debug.Log($"새로운 currentObsId: {currentObsId}");
         dbManager.GetToxinData(obsId, toxins =>
         {
             DateTime endTime = Option.ENABLE_DEBUG_CODE ? DateTime.Now.AddDays(20) : DateTime.Now;
+            endTime = new DateTime(endTime.Year, endTime.Month, endTime.Day, endTime.Hour,(endTime.Minute / 10) * 10, 0);
             DateTime startTime = endTime.AddDays(-1);
+            startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
+            //Debug.Log($"OnNavigateObs차트 데이터 요청:  {startTime} ~ {endTime}");
             dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
-
+                //Debug.Log($"OnNavigateObs받은 차트 데이터 수: {chartDatas.Count}");
                 toxins.ForEach(model =>
                 {
                     if (chartDatas.Count <= 0) Debug.LogWarning("OnNavigateObs : 얻은 데이터의 원소 수가 0입니다. 차트를 정상적으로 표시할 수 없습니다. \nDB에 존재하지 않는 값이나 잘못된 범위를 지정했습니다.");
@@ -393,16 +400,49 @@ public class ModelManager : MonoBehaviour, ModelProvider
     {
         if (obj is not int alarmId) return;
 
+        //Debug.Log($"OnSelectAlarm 호출됨: alarmId={alarmId}");
+
         LogData log = logDataList.Find(logData => logData.idx == alarmId);
 
         if (log == null) throw new Exception($"ModelManager - OnSelectAlarm : 해당 로그의 정보를 찾지 못했습니다. alarm.idx : ({alarmId})");
 
+        //Debug.Log($"=== OnSelectAlarm 시작 ===");
+        //Debug.Log($"알람 시간: {log.time}");
+        //Debug.Log($"관측소 ID: {log.obsId}");
+
         dbManager.GetToxinData(log.obsId, toxins => {
             DateTime endTime = log.time;
+            endTime = new DateTime(endTime.Year, endTime.Month, endTime.Day, endTime.Hour, (endTime.Minute / 10) * 10, 0);
             DateTime startTime = endTime.AddDays(-1);
+            startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
+            Debug.Log($"OnSelectAlarm 차트 데이터 요청: {startTime} ~ {endTime}");
             dbManager.GetChartValue(log.obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
+                Debug.Log($"=== 126개 데이터 종류 분석 ===");
+                Debug.Log($"총 데이터 개수: {chartDatas.Count}");
+
+                // 보드별 그룹화
+                var boardGroups = chartDatas.GroupBy(d => d.boardidx).ToList();
+                Debug.Log($"보드 종류 개수: {boardGroups.Count}");
+
+                foreach (var boardGroup in boardGroups)
+                {
+                    Debug.Log($"\n--- Board {boardGroup.Key} ---");
+                    Debug.Log($"데이터 개수: {boardGroup.Count()}");
+
+                    // 각 보드 내에서 HNS별 그룹화
+                    var hnsGroups = boardGroup.GroupBy(d => d.hnsidx).ToList();
+                    Debug.Log($"HNS 종류 개수: {hnsGroups.Count}");
+
+                    foreach (var hnsGroup in hnsGroups)
+                    {
+                        var firstData = hnsGroup.First();
+                        Debug.Log($"  HNS {hnsGroup.Key}: {hnsGroup.Count()}개 데이터");
+                        Debug.Log($"    샘플 값: val={firstData.val}, aival={firstData.aival}");
+                        Debug.Log($"    시간 범위: {hnsGroup.Min(d => d.obsdt)} ~ {hnsGroup.Max(d => d.obsdt)}");
+                    }
+                }
                 int countExpected = Mathf.FloorToInt((Option.TREND_DURATION_LOG * 60f) / Option.TREND_TIME_INTERVAL);
 
                 toxins.ForEach(model =>

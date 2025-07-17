@@ -39,7 +39,7 @@ public class ObsMonitoringItem : MonoBehaviour
             if (ColorUtility.TryParseHtmlString(htmlString: pair.Value, out color))
                 statusColorDic[pair.Key] = color;
     }
-    private void Start()
+    private void Awake()
     {
         trdSensor = GetComponentInChildren<UILineRenderer>();
         imgSignalLamp = transform.Find("Icon_SignalLamp").GetComponent<Image>();
@@ -53,6 +53,9 @@ public class ObsMonitoringItem : MonoBehaviour
 
     public void SetToxinData(int obsId, ToxinData toxin) 
     {
+        Debug.Log($"ObsMonitoringItem toxin is null: {toxin == null}");
+        Debug.Log($"ObsMonitoringItem lblSensorName is null: {lblSensorName == null}");
+        Debug.Log($"ObsMonitoringItem imgSignalLamp is null: {imgSignalLamp == null}");
         this.toxin = toxin;
         lblSensorName.text = toxin.hnsName;
         lblThreshold.text =  "" + toxin.warning;

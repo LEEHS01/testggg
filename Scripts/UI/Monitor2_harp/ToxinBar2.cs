@@ -41,7 +41,7 @@ internal class ToxinBar2 : MonoBehaviour
             if (ColorUtility.TryParseHtmlString(htmlString: pair.Value, out color))
                 statusColorDic[pair.Key] = color;
     }
-    private void Start()
+    private void Awake()
     {
         trdSensor = GetComponentInChildren<UILineRenderer>();
         imgSignalLamp = transform.Find("Icon_SignalLamp").GetComponent<Image>();
@@ -51,11 +51,17 @@ internal class ToxinBar2 : MonoBehaviour
         lblValue = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>();
         btnSelectCurrentSensor = GetComponent<Button>();
         btnSelectCurrentSensor.onClick.AddListener(OnClick);
+
     }
 
 
     public void SetToxinData(int obsId, ToxinData toxin, ToxinStatus status)
     {
+
+        //Debug.Log($"=== SetToxinData 호출 ===");
+        //Debug.Log($"toxin.hnsName: {toxin.hnsName} toxin.GetLastValue(): {toxin.GetLastValue()}");
+        // Debug.Log($"toxin.warning: {toxin.warning}");
+        //Debug.Log($"toxin.values.Count: {toxin.values?.Count ?? 0}");
         this.toxin = toxin;
         this.sensorStatus = status;
         this.obsId = obsId;
@@ -82,6 +88,7 @@ internal class ToxinBar2 : MonoBehaviour
 
     private void OnClick()
     {
+        Debug.Log($"ToxinBar2 클릭됨: {toxin.hnsName}, boardId={toxin.boardid}, hnsId={toxin.hnsid}");
         int boardId = toxin.boardid;
         int hnsId = toxin.boardid == 1 ? 0 : toxin.hnsid;
         UiManager.Instance.Invoke(UiEventType.SelectAlarmSensor, (boardId, hnsId));

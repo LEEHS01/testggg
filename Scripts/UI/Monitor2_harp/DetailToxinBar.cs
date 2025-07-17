@@ -116,6 +116,8 @@ internal class DetailToxinBar : MonoBehaviour
             Debug.LogWarning($"[OnSelectCurrentSensor] 센서 값이 비어 있음 (boardId={boardId}, hnsId={hnsId})");
             return;
         }
+        Debug.Log($"toxinData.values 개수: {toxinData.values.Count}");
+        Debug.Log($"toxinData.warning: {toxinData.warning}");
 
         // 이름 표시
         txtName.text = toxinData.hnsName;

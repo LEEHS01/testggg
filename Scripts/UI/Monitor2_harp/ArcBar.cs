@@ -55,7 +55,7 @@ internal class ArcBar : MonoBehaviour
 
     public void SetValue(ToxinData toxin)
     {
-        Debug.LogError($"toxin3 : {toxin.hnsName} {toxin.on} {toxin.fix}");
+        //Debug.LogError($"toxin3 : {toxin.hnsName} {toxin.on} {toxin.fix}");
         gameObject.SetActive(toxin.on);
         data = toxin;
 

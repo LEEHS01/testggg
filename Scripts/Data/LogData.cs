@@ -46,8 +46,16 @@ namespace Onthesys
 
         internal static LogData FromAlarmLogModel(AlarmLogModel item) => 
             new LogData(
-                item.obsidx, item.boardidx, item.areanm, item.obsnm, item.hnsidx, item.hnsnm, 
-                Convert.ToDateTime(item.aladt), item.alacode, item.currval, item.alaidx,
+                item.obsidx, 
+                item.boardidx, 
+                item.areanm, 
+                item.obsnm, 
+                item.hnsidx, 
+                item.hnsnm, 
+                Convert.ToDateTime(item.aladt), 
+                item.alacode,
+                item.currval.HasValue ? item.currval.Value : 0f,
+                item.alaidx,
                 item.alahival.HasValue ? item.alahival.Value : 0f,
                 item.alahihival.HasValue ? item.alahihival.Value : 0f);
     }
