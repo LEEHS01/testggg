@@ -358,7 +358,7 @@ public class DbManager : MonoBehaviour
         var startdt = startDt.ToString("yyyyMMddHHmm00");
         var enddt = endDt.ToString("yyyyMMddHHmm00");
         var query = $"EXEC GET_CHARTVALUE @obsidx = {obsId}, @start_dt = '{startdt}', @end_dt = '{enddt}', @interval = {intervalMin};";
-        //Debug.LogError($"qurey {query}");
+        Debug.LogError($"qurey {query}");
         yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
         {
             Debug.Log("HNS Chart Response: " + response);

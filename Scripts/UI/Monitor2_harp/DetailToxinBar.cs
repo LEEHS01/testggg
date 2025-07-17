@@ -29,6 +29,15 @@ internal class DetailToxinBar : MonoBehaviour
     //private int periodDays = 1;
     public TMP_Dropdown periodDropdown;
 
+    //툴팁
+    [Header("Tooltip Components")]
+    public GameObject tooltip;
+    public TMP_Text txtTime;
+    public TMP_Text txtValue;
+    public RectTransform chartArea;
+
+    private List<float> originalValues = new();
+
 
 
     void Start()
@@ -41,6 +50,13 @@ internal class DetailToxinBar : MonoBehaviour
         //UiManager.Instance.Register(UiEventType.SelectAlarmSensor, OnSelectToxin);
         UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnChangeTrendLine); // 이벤트 등록
         btnDetail.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OnClick);
+
+        /*tooltip = transform.Find("Tooltip").gameObject;
+        txtTime = tooltip.transform.Find("txtTime").GetComponent<TMP_Text>();
+        txtValue = tooltip.transform.Find("txtValue").GetComponent<TMP_Text>();
+        chartArea = transform.Find("Chart_Grid").GetComponent<RectTransform>();*/
+
+        tooltip.SetActive(false);
 
         //UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (1, 0)); // 디폴트 센서 강제 트리거
     }
@@ -65,6 +81,9 @@ internal class DetailToxinBar : MonoBehaviour
         toxinData.values.ForEach(val => normalizedValues.Add(val / max));
 
         line.UpdateControlPoints(normalizedValues);
+
+        originalValues.Clear();
+        originalValues.AddRange(toxinData.values);
 
     }
     /*
@@ -132,6 +151,8 @@ internal class DetailToxinBar : MonoBehaviour
         line.UpdateControlPoints(normalizedValues);
 
         Debug.Log($"[OnSelectCurrentSensor] 그래프 정상 업데이트 완료 (boardId={boardId}, hnsId={hnsId})");
+        originalValues.Clear();
+        originalValues.AddRange(toxinData.values);
     }
 
     private void InitializeDropdown()
@@ -234,7 +255,8 @@ internal class DetailToxinBar : MonoBehaviour
     private void SetDynamicHours(int periodDays)
     {
         DateTime endDt = DateTime.Now;
-        DateTime startDt = endDt.AddDays(-periodDays);
+        //DateTime startDt = endDt.AddDays(-periodDays);
+        DateTime startDt = endDt.AddHours(-12); // 직접 12시간
         var interval = (endDt - startDt).TotalMinutes / (this.hours.Count-1);
 
         for (int i = 0; i < this.hours.Count; i++)
@@ -278,7 +300,110 @@ internal class DetailToxinBar : MonoBehaviour
         }
     }
 
+    #region 툴팁
 
+    void Update()
+    {
+        //Debug.Log("DetailToxinBar Update() 실행됨!");
+        CheckMouseHover();
+    }
+
+    private void CheckMouseHover()
+    {
+        if (toxinData == null || originalValues.Count == 0) return;
+
+        Vector2 mousePos;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            chartArea, Input.mousePosition, null, out mousePos);
+
+        if (chartArea.rect.Contains(mousePos))
+        {
+            int closestIndex = FindClosestDataPoint(mousePos);
+            if (closestIndex >= 0)
+            {
+                ShowTooltip(closestIndex, Input.mousePosition);
+            }
+        }
+        else
+        {
+            HideTooltip();
+        }
+    }
+
+    private int FindClosestDataPoint(Vector2 mousePos)
+    {
+        float minDistance = float.MaxValue;
+        int closestIndex = -1;
+
+        for (int i = 0; i < originalValues.Count; i++)
+        {
+            Vector2 pointPos = ConvertChartToLocalPosition(i, originalValues[i]);
+            float distance = Vector2.Distance(mousePos, pointPos);
+
+            if (distance < 20f && distance < minDistance)
+            {
+                minDistance = distance;
+                closestIndex = i;
+            }
+        }
+
+        return closestIndex;
+    }
+
+    private Vector2 ConvertChartToLocalPosition(int index, float value)
+    {
+        float xRatio = (float)index / (originalValues.Count - 1);
+        float yRatio = value / Mathf.Max(originalValues.Max(), toxinData.warning);
+
+        return new Vector2(
+            chartArea.rect.xMin + chartArea.rect.width * xRatio,
+            chartArea.rect.yMin + chartArea.rect.height * yRatio
+        );
+    }
+
+    private void ShowTooltip(int index, Vector3 screenPosition)
+    {
+        if (tooltip == null) return;
+
+        tooltip.SetActive(true);
+
+        float value = originalValues[index];
+        DateTime time = GetTimeForIndex(index);
+
+        if (txtTime != null) txtTime.text = time.ToString("yyMMdd - HH:mm");
+        if (txtValue != null) txtValue.text = value.ToString("F2");
+
+        RectTransform tooltipRect = tooltip.GetComponent<RectTransform>();
+        if (tooltipRect == null)
+        {
+            Debug.LogError("Tooltip에 RectTransform이 없습니다!");
+            return;
+        }
+
+        // 툴팁 크기 가져오기
+        Vector2 tooltipSize = tooltipRect.sizeDelta;
+
+        // 하단 중앙이 마우스 포인터에 오도록 오프셋 계산
+        Vector3 offset = new Vector3(0, tooltipSize.y + 2, 0); // 높이의 절반만큼 위로
+
+        // 최종 위치 설정
+        tooltipRect.position = screenPosition + offset;
+    }
+
+    private void HideTooltip()
+    {
+        tooltip.SetActive(false);
+    }
+
+    private DateTime GetTimeForIndex(int index)
+    {
+        DateTime endTime = DateTime.Now;
+        DateTime startTime = endTime.AddHours(-12);
+        double intervalMinutes = (endTime - startTime).TotalMinutes / (originalValues.Count - 1);
+
+        return startTime.AddMinutes(intervalMinutes * index);
+    }
+    #endregion
 
 
 }

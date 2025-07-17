@@ -37,18 +37,18 @@ namespace Onthesys
             Option.alarmThreshold = (ToxinStatus)returnStatus;
         }
 
-        public static bool ENABLE_DEBUG_CODE = true;
+        public static bool ENABLE_DEBUG_CODE = false;
 
         /// <summary>
         /// 트렌드 UI가 실시간으로 데이터를 받아오는 주기입니다. 단위는 분(MIN)입니다.
         /// 짧아질수록 트렌드가 촘촘해집니다.
         /// </summary>
-        public static int TREND_TIME_INTERVAL = 30;
+        public static int TREND_TIME_INTERVAL = 10;
 
         /// <summary>
         /// 트렌드 UI가 실시간으로 표시할 기간의 길이입니다. 단위는 시간(HOUR)입니다.
         /// </summary>
-        public static int TREND_DURATION_REALTIME = 24;
+        public static int TREND_DURATION_REALTIME = 12;
         /// <summary>
         /// 트렌드 UI가 Log데이터에 맞춰 표시할 기간의 길이입니다. 단위는 시간(HOUR)입니다.
         /// </summary>

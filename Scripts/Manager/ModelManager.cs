@@ -337,7 +337,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
         {
             DateTime endTime = Option.ENABLE_DEBUG_CODE ? DateTime.Now.AddDays(20) : DateTime.Now;
             endTime = new DateTime(endTime.Year, endTime.Month, endTime.Day, endTime.Hour,(endTime.Minute / 10) * 10, 0);
-            DateTime startTime = endTime.AddDays(-1);
+
+            DateTime startTime = endTime.AddHours(-12);
             startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
             //Debug.Log($"OnNavigateObs차트 데이터 요청:  {startTime} ~ {endTime}");
