@@ -143,7 +143,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
         });
 
         //지속적으로 재귀 호출
-        DOVirtual.DelayedCall(Option.ENABLE_DEBUG_CODE? 1 : Option.TREND_TIME_INTERVAL * 60, GetTrendValueProcess);
+        //DOVirtual.DelayedCall(Option.ENABLE_DEBUG_CODE? 1 : Option.TREND_TIME_INTERVAL * 60, GetTrendValueProcess);
+        DOVirtual.DelayedCall(Option.TREND_TIME_INTERVAL * 60, GetTrendValueProcess);
     }
 
     //List<float> seps = new();
@@ -377,19 +378,42 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     }
                 });
 
-                currentObsId = obsId;
-
-                this.toxins.Clear();
-                this.toxins.AddRange(toxins);
-
-                UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
-                UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
-
-                var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
-                if (defaultSensor != null)
+                dbManager.GetToxinValueLast(obsId, currents =>
                 {
-                    UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
-                }
+                    toxins.ForEach(toxin =>
+                    {
+                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                        if (curr != null) toxin.UpdateValue(curr);
+                    });
+
+                    // 전역 저장은 실시간 값 업데이트 후에
+                    this.toxins.Clear();
+                    this.toxins.AddRange(toxins);
+
+                    // UI 업데이트
+                    UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
+                    UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
+
+                    var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
+                    if (defaultSensor != null)
+                    {
+                        UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
+                    }
+                });
+
+                /*  currentObsId = obsId;
+
+                  this.toxins.Clear();
+                  this.toxins.AddRange(toxins);
+
+                  UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
+                  UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);*/
+
+                /* var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
+                 if (defaultSensor != null)
+                 {
+                     UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
+                 }*/
             });
 
 
@@ -503,11 +527,11 @@ public class ModelManager : MonoBehaviour, ModelProvider
                 //UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, 0);
                 UiManager.Instance.Invoke(UiEventType.ChangeAlarmSensorList);
 
-                var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
+                /*var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
                 if (defaultSensor != null)
                 {
                     UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
-                }
+                }*/
             });
         });
     }

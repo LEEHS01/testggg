@@ -301,27 +301,72 @@ internal class DetailToxinBar : MonoBehaviour
     }
 
     #region 툴팁
+    private Vector3 GetDisplay2MousePosition()
+    {
+        Vector3 mousePos = Input.mousePosition;
+
+        // Input.mousePosition은 항상 Display 1 기준이므로
+        // Display 2로 변환하려면 Display 1의 너비만큼 빼기
+        if (Display.displays.Length > 1)
+        {
+            mousePos.x -= Display.displays[0].systemWidth;
+
+            // 마우스가 Display 1에 있으면 음수가 됨
+            if (mousePos.x < 0 || mousePos.x > Display.displays[1].systemWidth)
+            {
+                return Vector3.negativeInfinity; // 범위 밖임을 표시
+            }
+        }
+
+        return mousePos;
+    }
 
     void Update()
     {
         //Debug.Log("DetailToxinBar Update() 실행됨!");
         CheckMouseHover();
     }
-
     private void CheckMouseHover()
     {
         if (toxinData == null || originalValues.Count == 0) return;
 
-        Vector2 mousePos;
-        RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            chartArea, Input.mousePosition, null, out mousePos);
+        // Display 2 기준 마우스 좌표 가져오기
+        Vector3 display2MousePos = GetDisplay2MousePosition();
 
-        if (chartArea.rect.Contains(mousePos))
+        // 마우스가 Display 2 범위에 없으면 툴팁 숨기기
+        if (display2MousePos == Vector3.negativeInfinity)
+        {
+            HideTooltip();
+            return;
+        }
+
+        Vector2 mousePos;
+        bool isInside = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            chartArea, display2MousePos, null, out mousePos);
+
+        /*// *** 핵심 변경: 확장 영역 제거, 순수 chartArea.rect만 사용 ***
+        if (isInside && chartArea.rect.Contains(mousePos))
         {
             int closestIndex = FindClosestDataPoint(mousePos);
             if (closestIndex >= 0)
             {
-                ShowTooltip(closestIndex, Input.mousePosition);
+                ShowTooltip(closestIndex, display2MousePos);
+            }
+        }
+        else
+        {
+            HideTooltip();
+        }*/
+
+        Rect expandedRect = chartArea.rect;
+        expandedRect.xMax += 30;
+
+        if (isInside && expandedRect.Contains(mousePos))
+        {
+            int closestIndex = FindClosestDataPoint(mousePos);
+            if (closestIndex >= 0)
+            {
+                ShowTooltip(closestIndex, display2MousePos);
             }
         }
         else
@@ -352,13 +397,39 @@ internal class DetailToxinBar : MonoBehaviour
 
     private Vector2 ConvertChartToLocalPosition(int index, float value)
     {
-        float xRatio = (float)index / (originalValues.Count - 1);
-        float yRatio = value / Mathf.Max(originalValues.Max(), toxinData.warning);
+        Rect chartRect = chartArea.rect;
 
-        return new Vector2(
-            chartArea.rect.xMin + chartArea.rect.width * xRatio,
-            chartArea.rect.yMin + chartArea.rect.height * yRatio
-        );
+        // 인덱스를 0~1 범위로 정규화
+        float normalizedIndex = (originalValues.Count > 1) ?
+            (float)index / (originalValues.Count - 1) : 0f;
+
+        // 값을 0~1 범위로 정규화 (음수 방지)
+        float maxValue = Mathf.Max(originalValues.Max(), toxinData.warning);
+        float minValue = Mathf.Min(originalValues.Min(), 0f); // 최소값도 고려
+
+        float normalizedValue;
+        if (maxValue > minValue)
+        {
+            normalizedValue = (value - minValue) / (maxValue - minValue);
+        }
+        else
+        {
+            normalizedValue = 0f;
+        }
+
+        // 0~1 범위로 클램핑
+        normalizedValue = Mathf.Clamp01(normalizedValue);
+
+        // 실제 픽셀 위치 계산
+        float xPos = chartRect.xMin + chartRect.width * normalizedIndex;
+        float yPos = chartRect.yMin + chartRect.height * normalizedValue;
+
+        // 디버깅 로그 추가
+        Debug.Log($"노드 {index}: value={value:F2}, normalizedValue={normalizedValue:F3}, " +
+                 $"maxValue={maxValue:F2}, minValue={minValue:F2}, yPos={yPos:F2}");
+
+        Vector2 result = new Vector2(xPos, yPos);
+        return result;
     }
 
     private void ShowTooltip(int index, Vector3 screenPosition)
@@ -374,20 +445,43 @@ internal class DetailToxinBar : MonoBehaviour
         if (txtValue != null) txtValue.text = value.ToString("F2");
 
         RectTransform tooltipRect = tooltip.GetComponent<RectTransform>();
-        if (tooltipRect == null)
+        if (tooltipRect == null) return;
+
+        // Display 2 기준 마우스 좌표 사용
+        Vector3 display2MousePos = GetDisplay2MousePosition();
+
+        if (display2MousePos == Vector3.negativeInfinity)
         {
-            Debug.LogError("Tooltip에 RectTransform이 없습니다!");
+            HideTooltip();
             return;
         }
 
-        // 툴팁 크기 가져오기
-        Vector2 tooltipSize = tooltipRect.sizeDelta;
+        Canvas canvas = GetComponentInParent<Canvas>();
+        Vector2 localPos;
 
-        // 하단 중앙이 마우스 포인터에 오도록 오프셋 계산
-        Vector3 offset = new Vector3(0, tooltipSize.y + 2, 0); // 높이의 절반만큼 위로
+        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            canvas.transform as RectTransform,
+            display2MousePos,
+            canvas.worldCamera,
+            out localPos))
+        {
+            Vector2 tooltipSize = tooltipRect.sizeDelta;
 
-        // 최종 위치 설정
-        tooltipRect.position = screenPosition + offset;
+            // 위치 조정
+            localPos.y += tooltipSize.y / 2 + 60 ;
+
+            if (index >= originalValues.Count - 4)
+            {
+                localPos.x -= 400;
+                /* localPos.x -= tooltipSize.x + 0;*/
+            }
+            else
+            {
+                localPos.x -= 350;
+            }
+
+            tooltipRect.anchoredPosition = localPos;
+        }
     }
 
     private void HideTooltip()
