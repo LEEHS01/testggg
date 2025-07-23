@@ -311,10 +311,10 @@ public class DbManager : MonoBehaviour
         List<CurrentDataModel> curDatas = new();
 
         var query = $"EXEC GET_CURRENT_TOXI @obsidx = {obsId}";
-        Debug.LogError($"GetToxinValueLastFunc - qurey {query}");
+        //Debug.LogError($"GetToxinValueLastFunc - qurey {query}");
         yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
         {
-            Debug.Log("HNS Toxin Value Response: " + response);
+            Debug.Log("GetToxinValueLastFunc HNS Toxin Value Response: " + response);
             var entity = JsonConvert.DeserializeObject<List<CurrentDataModel>>(response);
             entity.ForEach(item =>
                 curDatas.Add(item));
@@ -334,7 +334,7 @@ public class DbManager : MonoBehaviour
         var query = $"EXEC GET_SETTING @obsidx = {obsId};";
         yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
         {
-            Debug.Log("API HNS Response: " + response);
+            Debug.Log("GetToxinDataFunc API HNS Response: " + response);
             var entity = JsonConvert.DeserializeObject<List<HnsResourceModel>>(response);
 
             entity.ForEach(model =>
@@ -359,7 +359,7 @@ public class DbManager : MonoBehaviour
         var startdt = startDt.ToString("yyyyMMddHHmm00");
         var enddt = endDt.ToString("yyyyMMddHHmm00");
         var query = $"EXEC GET_CHARTVALUE @obsidx = {obsId}, @start_dt = '{startdt}', @end_dt = '{enddt}', @interval = {intervalMin};";
-        Debug.LogError($"GetChartValueFunc - qurey {query}");
+        //Debug.LogError($"GetChartValueFunc - qurey {query}");
         yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
         {
             Debug.Log("HNS Chart Response: " + response);

@@ -63,9 +63,60 @@ internal class DetailToxinBar : MonoBehaviour
 
     private void OnClick()
     {
-        if (toxinData == null) return;
+        Debug.LogWarning("=== DetailToxinBar OnClick 상세 디버깅 ===");
 
-        UiManager.Instance.Invoke(UiEventType.Popup_AiTrend, (toxinData.boardid, toxinData.hnsid));
+        if (toxinData == null)
+        {
+            Debug.LogWarning("toxinData가 null입니다!");
+            return;
+        }
+
+        Debug.LogWarning($"현재 toxinData: boardid={toxinData.boardid}, hnsid={toxinData.hnsid}, name={toxinData.hnsName}");
+
+        // 실시간 데이터 확인
+        List<ToxinData> realTimeToxins = modelProvider.GetToxins();
+        Debug.LogWarning($"실시간 센서 데이터 개수: {realTimeToxins.Count}");
+
+        // 로그 데이터 확인
+        List<ToxinData> logToxins = modelProvider.GetToxinsInLog();
+        Debug.LogWarning($"로그 센서 데이터 개수: {logToxins.Count}");
+
+        // 로그 데이터에서 각 센서의 aiValues 상태 확인
+        foreach (var logToxin in logToxins)
+        {
+            Debug.LogWarning($"LogToxin: Board{logToxin.boardid}/HNS{logToxin.hnsid} - {logToxin.hnsName}");
+            Debug.LogWarning($"  aiValues: {(logToxin.aiValues?.Count ?? 0)}개");
+            Debug.LogWarning($"  values: {(logToxin.values?.Count ?? 0)}개");
+            Debug.LogWarning($"  diffValues: {(logToxin.diffValues?.Count ?? 0)}개");
+
+            // 현재 센서와 매칭되는지 확인
+            if (logToxin.boardid == toxinData.boardid && logToxin.hnsid == toxinData.hnsid)
+            {
+                Debug.LogWarning($"  ✅ 현재 센서와 매칭됨!");
+
+                if (logToxin.aiValues != null && logToxin.aiValues.Count > 0)
+                {
+                    Debug.LogWarning($"  ✅ aiValues 존재: {logToxin.aiValues.Count}개");
+                    Debug.LogWarning($"  샘플 aiValues: {string.Join(", ", logToxin.aiValues.Take(3))}...");
+
+                    // 정상 케이스 - 팝업 열기
+                    Debug.LogWarning("🎉 AI값 존재 - PopupDetailToxin 열기");
+                    UiManager.Instance.Invoke(UiEventType.Popup_AiTrend, (toxinData.boardid, toxinData.hnsid));
+                    return;
+                }
+                else
+                {
+                    Debug.LogWarning("❌ 매칭되는 센서는 있지만 aiValues가 비어있음");
+                }
+            }
+        }
+
+        // 여기까지 왔다면 매칭되는 센서를 찾지 못했거나 aiValues가 없음
+        Debug.LogWarning("❌ AI값 없음 - 에러 팝업 표시");
+        UiManager.Instance.Invoke(UiEventType.PopupErrorMonitorB,
+            new Exception("AI 분석값이 없습니다. 알람 로그를 먼저 선택해주세요."));
+        //if (toxinData == null) return;
+        //UiManager.Instance.Invoke(UiEventType.Popup_AiTrend, (toxinData.boardid, toxinData.hnsid));
     }
 
     private void OnChangeTrendLine(object obj)

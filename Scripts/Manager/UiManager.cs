@@ -252,5 +252,6 @@ public enum UiEventType
     PopupMachineInfo,  //기계 제원 패널 표시
     PopupSetting,  //환경설정 패널 표시
     PopupError,     //에러 발생
+    PopupErrorMonitorB //모니터b용 에러 발생
 
 }

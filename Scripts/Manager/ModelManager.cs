@@ -328,24 +328,26 @@ public class ModelManager : MonoBehaviour, ModelProvider
     private void OnNavigateObs(object obj)
     {
         if (obj is not int obsId) return;
+        //Debug.LogError($"[1단계] ObsId 전달: {obsId}");
         //Debug.Log($"=== OnNavigateObs 디버그 ===");
         //Debug.Log($"전달받은 obsId: {obsId}");
         //Debug.Log($"이전 currentObsId: {currentObsId}");
 
         currentObsId = obsId;
-       // Debug.Log($"새로운 currentObsId: {currentObsId}");
+       //Debug.Log($"새로운 currentObsId: {currentObsId}");
         dbManager.GetToxinData(obsId, toxins =>
         {
+            //Debug.LogError($"[2단계] ToxinData 받음: {toxins.Count}개");
             DateTime endTime = Option.ENABLE_DEBUG_CODE ? DateTime.Now.AddDays(20) : DateTime.Now;
             endTime = new DateTime(endTime.Year, endTime.Month, endTime.Day, endTime.Hour,(endTime.Minute / 10) * 10, 0);
 
             DateTime startTime = endTime.AddHours(-12);
             startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
-            //Debug.Log($"OnNavigateObs차트 데이터 요청:  {startTime} ~ {endTime}");
+            //Debug.LogError($"[3단계] 차트 데이터 요청: {startTime:HH:mm} ~ {endTime:HH:mm}");
             dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
-                //Debug.Log($"OnNavigateObs받은 차트 데이터 수: {chartDatas.Count}");
+                //Debug.LogError($"[4단계] 차트 데이터 받음: {chartDatas.Count}개");
                 toxins.ForEach(model =>
                 {
                     if (chartDatas.Count <= 0) Debug.LogWarning("OnNavigateObs : 얻은 데이터의 원소 수가 0입니다. 차트를 정상적으로 표시할 수 없습니다. \nDB에 존재하지 않는 값이나 잘못된 범위를 지정했습니다.");
@@ -361,8 +363,44 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
                     model.values = values;
                 });
+                //Debug.LogError($"[5단계] Values 설정 완료");
+                var alarmCount = logDataList.Where(t => t.obsId == obsId).Count();
+                try
+                {
+                    logDataList.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
+                    {
+                        //Debug.LogError($"[6-1] 알람 처리 중: status={ala.status}, boardId={ala.boardId}, hnsId={ala.hnsId}");
 
-                logDataList.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
+                        if (ala.status == 0)
+                        {
+                            var targetToxins = toxins.Where(t => t.boardid == ala.boardId && t.status != ToxinStatus.Red).ToList();
+                            //Debug.LogError($"[6-2] 설비이상 대상 센서: {targetToxins.Count}개");
+                            targetToxins.ForEach(t => {
+                                if (t != null) t.status = ToxinStatus.Yellow;
+                            });
+                        }
+                        else
+                        {
+                            var targetToxin = toxins.FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId);
+                            if (targetToxin != null)
+                            {
+                                //Debug.LogError($"[6-3] 센서 알람 설정: Board{ala.boardId}, HNS{ala.hnsId}");
+                                targetToxin.status = ToxinStatus.Red;
+                            }
+                            else
+                            {
+                                //Debug.LogError($"[6-3] 센서 찾기 실패: Board{ala.boardId}, HNS{ala.hnsId}");
+                            }
+                        }
+                    });
+
+                    //Debug.LogError($"[6-완료] 알람 상태 반영 완료");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"[6-오류] 알람 상태 반영 실패: {ex.Message}");
+                }
+                /*logDataList.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
                 {
                     if (ala.status == 0)
                     {
@@ -376,10 +414,23 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         .FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId)
                         .status = ToxinStatus.Red;
                     }
-                });
+                });*/
 
                 dbManager.GetToxinValueLast(obsId, currents =>
                 {
+                    //Debug.LogError($"[7단계] 실시간 값 받음: {currents.Count}개");
+                    int updateCount = 0;
+                    toxins.ForEach(toxin =>
+                    {
+                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                        if (curr != null)
+                        {
+                            toxin.UpdateValue(curr);
+                            updateCount++;
+                        }
+                    });
+
+                    //Debug.LogError($"[8단계] 실시간 값 업데이트: {updateCount}개");
                     toxins.ForEach(toxin =>
                     {
                         var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
@@ -389,14 +440,15 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     // 전역 저장은 실시간 값 업데이트 후에
                     this.toxins.Clear();
                     this.toxins.AddRange(toxins);
-
+                    //Debug.LogError($"[9단계] 전역 저장 완료: {this.toxins.Count}개");
                     // UI 업데이트
                     UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
                     UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
-
+                    //Debug.LogError($"[10단계] UI 이벤트 발생 완료");
                     var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
                     if (defaultSensor != null)
                     {
+                        //Debug.LogError($"[11단계] 기본센서 선택: Board{defaultSensor.boardid}, HNS{defaultSensor.hnsid}");
                         UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
                     }
                 });
@@ -425,7 +477,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
     {
         if (obj is not int alarmId) return;
 
-        //Debug.Log($"OnSelectAlarm 호출됨: alarmId={alarmId}");
+        Debug.Log($"OnSelectAlarm 호출됨: alarmId={alarmId}");
 
         LogData log = logDataList.Find(logData => logData.idx == alarmId);
 
@@ -503,21 +555,43 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     }
                 });
 
-                logDataList.Where(t => t.obsId == log.obsId).ToList().ForEach(ala =>
+                try
                 {
-                    if (ala.status == 0)
+                    Debug.LogError($"OnSelectAlarm - 알람 상태 반영 시작");
+
+                    logDataList.Where(t => t.obsId == log.obsId).ToList().ForEach(ala =>
                     {
-                        toxins
-                        .Where(t => t.boardid == ala.boardId && t.status != ToxinStatus.Red).ToList()
-                        .ForEach(t => t.status = ToxinStatus.Yellow);
-                    }
-                    else
-                    {
-                        toxins
-                        .FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId)
-                        .status = ToxinStatus.Red;
-                    }
-                });
+                        //Debug.LogError($"OnSelectAlarm - 알람 처리: status={ala.status}, boardId={ala.boardId}, hnsId={ala.hnsId}");
+
+                        if (ala.status == 0)
+                        {
+                            var targetToxins = toxins.Where(t => t.boardid == ala.boardId && t.status != ToxinStatus.Red).ToList();
+                            //Debug.LogError($"OnSelectAlarm - 설비이상 대상: {targetToxins.Count}개");
+                            targetToxins.ForEach(t => {
+                                if (t != null) t.status = ToxinStatus.Yellow;
+                            });
+                        }
+                        else
+                        {
+                            var targetToxin = toxins.FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId);
+                            if (targetToxin != null)
+                            {
+                                //Debug.LogError($"OnSelectAlarm - 센서 알람 설정: Board{ala.boardId}, HNS{ala.hnsId}");
+                                targetToxin.status = ToxinStatus.Red;
+                            }
+                            else
+                            {
+                                //Debug.LogError($"OnSelectAlarm - 센서 찾기 실패: Board{ala.boardId}, HNS{ala.hnsId}");
+                            }
+                        }
+                    });
+
+                   // Debug.LogError($"OnSelectAlarm - 알람 상태 반영 완료");
+                }
+                catch (Exception ex)
+                {
+                    Debug.LogError($"❌ OnSelectAlarm - 알람 상태 반영 실패: {ex.Message}");
+                }
 
                 currentObsId = log.obsId;
 
