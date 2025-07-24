@@ -30,7 +30,7 @@ internal class ChartBar : MonoBehaviour
 
     void SetMins(DateTime dt)
     {
-        DateTime startDt = dt.AddHours(-4);
+        DateTime startDt = dt.AddHours(-12);
         var turm = (dt - startDt).TotalMinutes / this.hours.Count;
 
         for (int i = 0; i < this.hours.Count; i++)

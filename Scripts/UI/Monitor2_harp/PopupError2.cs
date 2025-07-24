@@ -28,7 +28,7 @@ public class PopupError2 : MonoBehaviour
 
     private void Start()
     {
-        Debug.Log("PopupError2 Start() 시작");
+        //Debug.Log("PopupError2 Start() 시작");
 
         // UiManager.Instance null 체크
         if (UiManager.Instance == null)
@@ -37,15 +37,15 @@ public class PopupError2 : MonoBehaviour
             return;
         }
 
-        Debug.Log("UiManager.Instance 확인됨");
+        //Debug.Log("UiManager.Instance 확인됨");
 
         deafultPos = transform.position;
-        Debug.Log($"기본 위치 설정: {deafultPos}");
+        //Debug.Log($"기본 위치 설정: {deafultPos}");
 
         try
         {
             UiManager.Instance.Register(UiEventType.PopupErrorMonitorB, OnPopupError);
-            Debug.Log("이벤트 등록 성공");
+           // Debug.Log("이벤트 등록 성공");
         }
         catch (System.Exception ex)
         {
@@ -55,7 +55,7 @@ public class PopupError2 : MonoBehaviour
         btnClose.onClick.AddListener(OnCloseError);
         gameObject.SetActive(false);
 
-        Debug.Log("PopupError2 Start() 완료");
+        //Debug.Log("PopupError2 Start() 완료");
         /*deafultPos = transform.position;
         UiManager.Instance.Register(UiEventType.PopupErrorMonitorB, OnPopupError);
 
@@ -75,7 +75,7 @@ public class PopupError2 : MonoBehaviour
 
         if (showEx == null) return;
 
-        transform.position = deafultPos;
+        //transform.position = deafultPos;
         gameObject.SetActive(true);
 
         lblTitle.text = "오류 발생";

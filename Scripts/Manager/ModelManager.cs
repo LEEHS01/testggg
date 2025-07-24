@@ -103,9 +103,9 @@ public class ModelManager : MonoBehaviour, ModelProvider
     #region [Processing]
     void GetTrendValueProcess() 
     {
-        Debug.Log($"=== GetTrendValueProcess 시작 ===");
-        Debug.Log($"currentObsId: {currentObsId}");
-        Debug.Log($"기존 toxins 개수: {toxins.Count}");
+        //Debug.Log($"=== GetTrendValueProcess 시작 ===");
+        //Debug.Log($"currentObsId: {currentObsId}");
+        //Debug.Log($"기존 toxins 개수: {toxins.Count}");
         dbManager.GetToxinValueLast(currentObsId, currents =>
         {
             /*foreach (var item in currents)
@@ -490,7 +490,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
         dbManager.GetToxinData(log.obsId, toxins => {
             DateTime endTime = log.time;
             endTime = new DateTime(endTime.Year, endTime.Month, endTime.Day, endTime.Hour, (endTime.Minute / 10) * 10, 0);
-            DateTime startTime = endTime.AddDays(-1);
+            DateTime startTime = endTime.AddHours(-12);
             startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
             Debug.Log($"OnSelectAlarm 차트 데이터 요청: {startTime} ~ {endTime}");

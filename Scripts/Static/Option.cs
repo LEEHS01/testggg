@@ -25,16 +25,29 @@ namespace Onthesys
                 Option.url = returnUrl;
             }
 
-            //Debug.LogError("PlayerPrefs.GetInt(\"alarmThreshold\", -1) : " + PlayerPrefs.GetInt("alarmThreshold", -1));
-            //alarm threshold 
-            int returnStatus = PlayerPrefs.GetInt("alarmThreshold", -1);
-            if (returnStatus == -1) 
+            int returnStatus = PlayerPrefs.GetInt("alarmThreshold", 2); // -1 대신 3 사용
+
+            // 유효 범위 체크 (0~3)
+            if (returnStatus < 0 || returnStatus > 3)
             {
-                Debug.LogWarning("there is no alarmThreshold in local storage");
+                Debug.LogWarning("Invalid alarmThreshold value, using default Purple");
                 Option.alarmThreshold = ToxinStatus.Purple;
             }
+            else
+            {
+                Option.alarmThreshold = (ToxinStatus)returnStatus;
+            }
 
-            Option.alarmThreshold = (ToxinStatus)returnStatus;
+            //Debug.LogError("PlayerPrefs.GetInt(\"alarmThreshold\", -1) : " + PlayerPrefs.GetInt("alarmThreshold", -1));
+            //alarm threshold 
+            /*  int returnStatus = PlayerPrefs.GetInt("alarmThreshold", -1);
+              if (returnStatus == -1) 
+              {
+                  Debug.LogWarning("there is no alarmThreshold in local storage");
+                  Option.alarmThreshold = ToxinStatus.Purple;
+              }
+
+              Option.alarmThreshold = (ToxinStatus)returnStatus;*/
         }
 
         public static bool ENABLE_DEBUG_CODE = false;
@@ -52,7 +65,7 @@ namespace Onthesys
         /// <summary>
         /// 트렌드 UI가 Log데이터에 맞춰 표시할 기간의 길이입니다. 단위는 시간(HOUR)입니다.
         /// </summary>
-        public static int TREND_DURATION_LOG = 24;
+        public static int TREND_DURATION_LOG = 12;
         public static int TOTAL_TOXIN = 37;
         public static float TOXIN_STATUS_RED = 0.95f;
         public static float TOXIN_STATUS_YELLOW = 0.7f;
