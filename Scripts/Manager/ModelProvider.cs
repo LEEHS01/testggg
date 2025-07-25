@@ -35,4 +35,5 @@ public interface ModelProvider
 
     public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId);
 
+    public DateTime GetCurrentChartEndTime();
 }

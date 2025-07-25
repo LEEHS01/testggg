@@ -188,4 +188,8 @@ public class ModelProviderTest : ModelProvider
     {
         return modelProvider.GetSensorStatus(obsId, boardId, sensorId);
     }
+    public DateTime GetCurrentChartEndTime()
+    {
+        return modelProvider.GetCurrentChartEndTime();
+    }
 }

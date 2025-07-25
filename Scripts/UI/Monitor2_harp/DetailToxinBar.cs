@@ -65,29 +65,15 @@ internal class DetailToxinBar : MonoBehaviour
     {
         if (toxinData == null) return;
 
-        // 로그 데이터 확인
-        List<ToxinData> logToxins = modelProvider.GetToxinsInLog();
-
-        // 로그 데이터에서 현재 센서와 매칭되는 데이터 찾기
-        foreach (var logToxin in logToxins)
+        if (toxinData.aiValues != null && toxinData.aiValues.Count > 0)
         {
-            // 현재 센서와 매칭되는지 확인
-            if (logToxin.boardid == toxinData.boardid && logToxin.hnsid == toxinData.hnsid)
-            {
-                if (logToxin.aiValues != null && logToxin.aiValues.Count > 0)
-                {
-                    // AI값이 존재하면 상세 팝업 열기
-                    UiManager.Instance.Invoke(UiEventType.Popup_AiTrend, (toxinData.boardid, toxinData.hnsid));
-                    return;
-                }
-            }
+            UiManager.Instance.Invoke(UiEventType.Popup_AiTrend, (toxinData.boardid, toxinData.hnsid));
         }
-
-        // AI값이 없으면 에러 팝업 표시
-        UiManager.Instance.Invoke(UiEventType.PopupErrorMonitorB,
-            new Exception("AI 분석값이 없습니다. 알람 로그를 먼저 선택해주세요."));
-        //if (toxinData == null) return;
-        //UiManager.Instance.Invoke(UiEventType.Popup_AiTrend, (toxinData.boardid, toxinData.hnsid));
+        else
+        {
+            UiManager.Instance.Invoke(UiEventType.PopupErrorMonitorB,
+                new Exception("AI 분석값이 없습니다."));
+        }
     }
 
     private void OnChangeTrendLine(object obj)
@@ -284,7 +270,7 @@ internal class DetailToxinBar : MonoBehaviour
         for (int i = 0; i < this.hours.Count; i++)
         {
             var t = startDt.AddMinutes(interval * i);
-            this.hours[i].text = t.ToString("MM-dd HH:mm");
+            this.hours[i].text = t.ToString("MM-dd\nHH:mm");
         }
     }
 

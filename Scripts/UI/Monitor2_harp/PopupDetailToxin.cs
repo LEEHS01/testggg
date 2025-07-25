@@ -50,8 +50,8 @@ internal class PopupDetailToxin : MonoBehaviour
         int boardId = tuple.Item1;
         int hnsId = tuple.Item2;
 
-        ToxinData toxin = modelProvider.GetToxinsInLog()
-        .Find(toxin => toxin.boardid == boardId && toxin.hnsid == hnsId);
+        ToxinData toxin = modelProvider.GetToxin(boardId, hnsId);
+        // modelProvider.GetToxinsInLog().Find(toxin => toxin.boardid == boardId && toxin.hnsid == hnsId);
 
         if (toxin == null)
         {
@@ -179,6 +179,8 @@ internal class PopupDetailToxin : MonoBehaviour
         // 추가로 짧은 시간 대기
         yield return new WaitForSeconds(0.1f);
 
+        DateTime endTime = modelProvider.GetCurrentChartEndTime();
+
         Debug.Log("지연된 차트 업데이트 시작");
 
         // 그래프 데이터 추출기 정의 (aiValues, values, diffValues)
@@ -213,12 +215,12 @@ internal class PopupDetailToxin : MonoBehaviour
             var chartValues = processedValues.Select(value => value / max).ToList();
 
             bars[i].line.UpdateControlPoints(chartValues);
-            bars[i].CreatAxis(log.time, max);
+            bars[i].CreatAxis(endTime, max);
 
             // ChartBar에 정규화된 값들 전달 (빨간 점 위치 계산용)
             bars[i].SetNormalizedValues(chartValues);
 
-            // ✅ 차트 포인트 찾기 - 여러 번 시도
+            // 차트 포인트 찾기 - 여러 번 시도
             yield return StartCoroutine(EnsureChartPointsReady(bars[i]));
 
             // 이상값 위치를 빨간색으로 표시

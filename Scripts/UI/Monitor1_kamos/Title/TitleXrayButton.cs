@@ -88,7 +88,7 @@ public class TitleXrayButton : MonoBehaviour
                 Transform sensors = observatory.Find("Sensors");
                 if (sensors != null)
                 {
-                    Debug.Log($"센서 표시 제어: {shouldShowSensors}");
+                    //Debug.Log($"센서 표시 제어: {shouldShowSensors}");
 
                     // 각 센서 GameObject의 활성화 상태 제어 (가장 간단하고 확실한 방법)
                     foreach (Transform sensor in sensors)
@@ -99,7 +99,7 @@ public class TitleXrayButton : MonoBehaviour
                         }
                     }
 
-                    Debug.Log($"모든 센서 활성화 상태: {shouldShowSensors}");
+                    //Debug.Log($"모든 센서 활성화 상태: {shouldShowSensors}");
                 }
             }
         }

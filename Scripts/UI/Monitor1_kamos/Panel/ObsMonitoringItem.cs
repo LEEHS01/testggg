@@ -53,13 +53,13 @@ public class ObsMonitoringItem : MonoBehaviour
 
     public void SetToxinData(int obsId, ToxinData toxin) 
     {
-        Debug.Log($"ObsMonitoringItem toxin is null: {toxin == null}");
-        Debug.Log($"ObsMonitoringItem lblSensorName is null: {lblSensorName == null}");
-        Debug.Log($"ObsMonitoringItem imgSignalLamp is null: {imgSignalLamp == null}");
+        //Debug.Log($"ObsMonitoringItem toxin is null: {toxin == null}");
+        //Debug.Log($"ObsMonitoringItem lblSensorName is null: {lblSensorName == null}");
+        //Debug.Log($"ObsMonitoringItem imgSignalLamp is null: {imgSignalLamp == null}");
         this.toxin = toxin;
         lblSensorName.text = toxin.hnsName;
         lblThreshold.text =  "" + toxin.warning;
-        lblValue.text = "" + toxin.GetLastValue();
+        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
         this.obsId = obsId;
 
         gameObject.SetActive(toxin.on);
@@ -93,6 +93,6 @@ public class ObsMonitoringItem : MonoBehaviour
 
         //trdSensor.UpdateControlPoints(normalizedValues.GetRange(normalizedValues.Count * 2 / 3 - 1, normalizedValues.Count / 3));
         trdSensor.UpdateControlPoints(normalizedValues);
-        lblValue.text = "" + toxin.GetLastValue();
+        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
     }
 }

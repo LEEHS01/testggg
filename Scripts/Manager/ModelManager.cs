@@ -103,9 +103,9 @@ public class ModelManager : MonoBehaviour, ModelProvider
     #region [Processing]
     void GetTrendValueProcess() 
     {
-        //Debug.Log($"=== GetTrendValueProcess 시작 ===");
-        //Debug.Log($"currentObsId: {currentObsId}");
-        //Debug.Log($"기존 toxins 개수: {toxins.Count}");
+        Debug.Log($"=== GetTrendValueProcess 시작 ===");
+        Debug.Log($"currentObsId: {currentObsId}");
+        Debug.Log($"기존 toxins 개수: {toxins.Count}");
         dbManager.GetToxinValueLast(currentObsId, currents =>
         {
             /*foreach (var item in currents)
@@ -224,6 +224,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
     private void OnNavigateHome(object obj)
     {
         currentObsId = -1;
+        this.logToxins.Clear();
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmSensorList);
     }
 
     private void OnNavigateArea(object obj)
@@ -231,6 +233,9 @@ public class ModelManager : MonoBehaviour, ModelProvider
         if (obj is not int areaId) return;
 
         currentObsId = -1;
+        this.logToxins.Clear();
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmSensorList);
+
         alarmSummarys.Clear();
 
         dbManager.GetAlarmSummary(areaId, summarys =>
@@ -325,13 +330,15 @@ public class ModelManager : MonoBehaviour, ModelProvider
             });
         });
     }*/
+    
+    private DateTime currentChartEndTime;
     private void OnNavigateObs(object obj)
     {
         if (obj is not int obsId) return;
+        this.logToxins.Clear();
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmSensorList);
         //Debug.LogError($"[1단계] ObsId 전달: {obsId}");
         //Debug.Log($"=== OnNavigateObs 디버그 ===");
-        //Debug.Log($"전달받은 obsId: {obsId}");
-        //Debug.Log($"이전 currentObsId: {currentObsId}");
 
         currentObsId = obsId;
        //Debug.Log($"새로운 currentObsId: {currentObsId}");
@@ -344,6 +351,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             DateTime startTime = endTime.AddHours(-12);
             startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
+            currentChartEndTime = endTime;
             //Debug.LogError($"[3단계] 차트 데이터 요청: {startTime:HH:mm} ~ {endTime:HH:mm}");
             dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
@@ -352,16 +360,34 @@ public class ModelManager : MonoBehaviour, ModelProvider
                 {
                     if (chartDatas.Count <= 0) Debug.LogWarning("OnNavigateObs : 얻은 데이터의 원소 수가 0입니다. 차트를 정상적으로 표시할 수 없습니다. \nDB에 존재하지 않는 값이나 잘못된 범위를 지정했습니다.");
 
-                    var values = chartDatas
+                    // 해당 센서의 차트 데이터만 필터링
+                    var chartDataForSensor = chartDatas
                         .Where(t => t.boardidx == model.boardid && t.hnsidx == model.hnsid)
-                        .Select(t => t.val).ToList();
+                        .ToList();
+
+                    // 기존 측정값
+                    var values = chartDataForSensor.Select(t => t.val).ToList();
+
+                    // AI값 추가
+                    var aiValues = chartDataForSensor.Select(t => t.aival).ToList();
+
+                    // 편차값 추가 (측정값 - AI값의 절댓값)
+                    var diffValues = chartDataForSensor.Select(t => Math.Abs(t.val - t.aival)).ToList();
 
                     int nodeCount = (int)((endTime - startTime) / TimeSpan.FromMinutes(Option.TREND_TIME_INTERVAL));
 
+                    // 부족한 데이터는 0으로 채우기
                     while (values.Count < nodeCount)
+                    {
                         values.Insert(0, 0f);
+                        aiValues.Insert(0, 0f);
+                        diffValues.Insert(0, 0f);
+                    }
 
+                    // 모델에 저장
                     model.values = values;
+                    model.aiValues = aiValues;
+                    model.diffValues = diffValues;
                 });
                 //Debug.LogError($"[5단계] Values 설정 완료");
                 var alarmCount = logDataList.Where(t => t.obsId == obsId).Count();
@@ -873,6 +899,11 @@ public class ModelManager : MonoBehaviour, ModelProvider
             }
         );
         return highestStatus;
+    }
+
+    public DateTime GetCurrentChartEndTime()
+    {
+        return currentChartEndTime;
     }
     #endregion [ModelProvider]
 

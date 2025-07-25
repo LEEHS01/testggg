@@ -69,7 +69,7 @@ internal class ToxinBar2 : MonoBehaviour
         //라벨과 램프등 제어
         lblSensorName.text = toxin.hnsName;
         lblThreshold.text = "" + toxin.warning;
-        lblValue.text = "" + toxin.GetLastValue();
+        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
 
         gameObject.SetActive(toxin.on);
 

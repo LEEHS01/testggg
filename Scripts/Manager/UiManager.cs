@@ -148,8 +148,8 @@ public class UiManager : MonoBehaviour
     {
         if (eventType == UiEventType.NavigateObs)
         {
-            Debug.Log($"NavigateObs 이벤트 발생: payload={payload}");
-            Debug.Log($"호출 위치:\n{System.Environment.StackTrace}");
+            //Debug.Log($"NavigateObs 이벤트 발생: payload={payload}");
+            //Debug.Log($"호출 위치:\n{System.Environment.StackTrace}");
         }
         if (eventHandlers.ContainsKey(eventType))
         {
