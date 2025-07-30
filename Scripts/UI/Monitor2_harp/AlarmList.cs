@@ -111,6 +111,13 @@ public class AlarmList : MonoBehaviour
     {
         List<LogData> alarms = modelProvider.GetAlarms();
 
+        /*// 센서 사용여부 필터링 추가 (USEYN='0'인 센서의 알람 제외)
+        alarms = alarms.Where(alarm =>
+        {
+            var toxin = modelProvider.GetToxin(alarm.boardId, alarm.hnsId);
+            return toxin?.on ?? true; // 센서가 활성화된 경우만 표시
+        }).ToList();
+*/
         // 지역 필터링
         if (areaIndex > 0)
         {

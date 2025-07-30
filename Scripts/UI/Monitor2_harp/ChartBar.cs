@@ -27,30 +27,39 @@ internal class ChartBar : MonoBehaviour
         SetMins(dt);
         SetVertical(max);
     }
+
     void SetMins(DateTime dt)
     {
-        DateTime endDt = dt;
-        DateTime startDt = endDt.AddHours(-12);
-        var interval = (endDt - startDt).TotalMinutes / (this.hours.Count - 1);
+        DateTime startDt = dt.AddHours(-12);
+
+        //Debug.Log($"🔍 전체 hours 배열 크기: {this.hours.Count}");
+        //Debug.Log($"🔍 활성화된 라벨 개수: {this.hours.Count(h => h.gameObject.activeInHierarchy)}");
+
+        var turm = (dt - startDt).TotalMinutes / (this.hours.Count - 1);
+        //Debug.Log($"🔍 계산된 간격: {turm}분 = {turm / 60:F1}시간");
 
         for (int i = 0; i < this.hours.Count; i++)
         {
-            var t = startDt.AddMinutes(interval * i);
-            this.hours[i].text = t.ToString("MM-dd\nHH:mm");
+            if (this.hours[i].gameObject.activeInHierarchy)
+            {
+                var t = dt.AddMinutes(-(turm * i));
+                this.hours[i].text = t.ToString("MM-dd\nHH:mm");
+            }
         }
     }
+
     /*void SetMins(DateTime dt)
     {
         DateTime startDt = dt.AddHours(-12);
-        var turm = (dt - startDt).TotalMinutes / this.hours.Count;
-        Debug.LogError("hours.Count = " + this.hours.Count);
+        var turm = (dt - startDt).TotalMinutes / (this.hours.Count -1);
+        
         for (int i = 0; i < this.hours.Count; i++)
         {
             var t = dt.AddMinutes(-(turm * i));
             this.hours[i].text = t.ToString("MM-dd HH:mm");
         }
-    }
-*/
+    }*/
+
     void SetVertical(float max)
     {
         var verticalMax = ((max + 1) / (verticals.Count - 1));

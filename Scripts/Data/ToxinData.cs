@@ -53,6 +53,7 @@ namespace Onthesys
             //Debug.Log("ToxinData.UpdateValue");
             if (model != null)
             {
+                //Debug.LogError($" 실시간 값 확인: board={model.boardidx}, hns={model.hnsidx}, val={model.val}");
                 /*if (hnsid == 4 && boardid == 3)
                     Debug.LogError($"UpdateValue bef{this.on} {model.useyn}");*/
                 this.serious = model.hi;

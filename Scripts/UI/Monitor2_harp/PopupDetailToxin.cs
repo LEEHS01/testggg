@@ -201,11 +201,11 @@ internal class PopupDetailToxin : MonoBehaviour
         for (int i = 0; i < Mathf.Min(bars.Count, valuesExtractors.Count); i++)
         {
             List<float> originalValues = valuesExtractors[i](this.data);
-            Debug.LogWarning($"[{i}] 원본 데이터: {string.Join(", ", originalValues)}");
+            //Debug.LogWarning($"[{i}] 원본 데이터: {string.Join(", ", originalValues)}");
 
             // 이상값 위치 기록
             List<int> anomalousIndices = GetAnomalousIndices(originalValues);
-            Debug.Log($"그래프 {i}: {anomalousIndices.Count}개 이상값 발견");
+            //Debug.Log($"그래프 {i}: {anomalousIndices.Count}개 이상값 발견");
 
             // 이상값을 직전값으로 대체
             List<float> processedValues = ProcessAnomalousValues(originalValues);

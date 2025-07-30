@@ -47,8 +47,8 @@ internal class ToxinBar2 : MonoBehaviour
         imgSignalLamp = transform.Find("Icon_SignalLamp").GetComponent<Image>();
 
         lblSensorName = transform.Find("Text (TMP) List").GetComponent<TMP_Text>();
-        lblThreshold = transform.Find("Text (TMP) List (1)").GetComponent<TMP_Text>();
-        lblValue = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>();
+        lblValue = transform.Find("Text (TMP) List (1)").GetComponent<TMP_Text>();
+        lblThreshold = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>();
         btnSelectCurrentSensor = GetComponent<Button>();
         btnSelectCurrentSensor.onClick.AddListener(OnClick);
 
@@ -57,11 +57,6 @@ internal class ToxinBar2 : MonoBehaviour
 
     public void SetToxinData(int obsId, ToxinData toxin, ToxinStatus status)
     {
-
-        //Debug.Log($"=== SetToxinData 호출 ===");
-        //Debug.Log($"toxin.hnsName: {toxin.hnsName} toxin.GetLastValue(): {toxin.GetLastValue()}");
-        // Debug.Log($"toxin.warning: {toxin.warning}");
-        //Debug.Log($"toxin.values.Count: {toxin.values?.Count ?? 0}");
         this.toxin = toxin;
         this.sensorStatus = status;
         this.obsId = obsId;

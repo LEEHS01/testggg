@@ -27,7 +27,7 @@ internal class ToxinList3 : MonoBehaviour
         UiManager.Instance.Register(UiEventType.ChangeSensorList, OnLoadSetting);
         UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnLoadRecentMeasure);
         UiManager.Instance.Register(UiEventType.CommitSensorUsing, OnCommitSensorUsing);
-        
+
         Transform scrollContent = transform.Find("Content");
 
         toxinItems = scrollContent.Find("gridsUpper").Find("Grid_Toxin").GetComponentsInChildren<ArcBar>().ToList();
@@ -43,12 +43,12 @@ internal class ToxinList3 : MonoBehaviour
         Debug.Log($"chemicalItems : {chemicalItems.Count}");
     }
 
-    private void Update()
+    /*private void Update()
     {
         qualityItems.ForEach(item => {
             item.SetAmount();
         });
-    }
+    }*/
 
     private void OnNavigateObs(object obj)
     {
@@ -61,6 +61,7 @@ internal class ToxinList3 : MonoBehaviour
 
     private void OnLoadRecentMeasure(object obj)
     {
+        Debug.Log("🔍 OnLoadRecentMeasure 호출됨");
         List<ToxinData> toxinDatas = modelProvider.GetToxins();
 
         if (toxinDatas.Count == 0) return;
@@ -120,6 +121,7 @@ internal class ToxinList3 : MonoBehaviour
 
         //아이템 활성화
         tItem.gameObject.SetActive(isUsing);
+      
         //레이아웃 갱신
         RectTransform rt = tItem.transform.parent.GetComponent<RectTransform>();
         LayoutRebuilder.ForceRebuildLayoutImmediate(rt);

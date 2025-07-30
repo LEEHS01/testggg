@@ -449,7 +449,7 @@ internal class DetailToxinBar : MonoBehaviour
         float value = originalValues[index];
         DateTime time = GetTimeForIndex(index);
 
-        if (txtTime != null) txtTime.text = time.ToString("yyMMdd - HH:mm");
+        if (txtTime != null) txtTime.text = time.ToString("yy.MM.dd HH:mm");
         if (txtValue != null) txtValue.text = value.ToString("F2");
 
         RectTransform tooltipRect = tooltip.GetComponent<RectTransform>();

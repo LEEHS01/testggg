@@ -351,10 +351,22 @@ public class ModelManager : MonoBehaviour, ModelProvider
             DateTime startTime = endTime.AddHours(-12);
             startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
 
-            currentChartEndTime = endTime;
             //Debug.LogError($"[3단계] 차트 데이터 요청: {startTime:HH:mm} ~ {endTime:HH:mm}");
             dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
+                // 실제 DB 데이터의 최신 시간을 currentChartEndTime으로 설정
+                if (chartDatas.Count > 0)
+                {
+                    var actualLatestTime = chartDatas
+                        .Select(d => DateTime.Parse(d.obsdt))
+                        .Max(); 
+
+                    currentChartEndTime = actualLatestTime; // 실제 데이터 시간 사용!
+                }
+                else
+                {
+                    currentChartEndTime = endTime; // 데이터가 없으면 기존 방식
+                }
                 //Debug.LogError($"[4단계] 차트 데이터 받음: {chartDatas.Count}개");
                 toxins.ForEach(model =>
                 {
@@ -363,6 +375,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     // 해당 센서의 차트 데이터만 필터링
                     var chartDataForSensor = chartDatas
                         .Where(t => t.boardidx == model.boardid && t.hnsidx == model.hnsid)
+                        .OrderBy(t => DateTime.Parse(t.obsdt))
                         .ToList();
 
                     // 기존 측정값
@@ -522,12 +535,10 @@ public class ModelManager : MonoBehaviour, ModelProvider
             Debug.Log($"OnSelectAlarm 차트 데이터 요청: {startTime} ~ {endTime}");
             dbManager.GetChartValue(log.obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
             {
-                Debug.Log($"=== 126개 데이터 종류 분석 ===");
-                Debug.Log($"총 데이터 개수: {chartDatas.Count}");
 
                 // 보드별 그룹화
                 var boardGroups = chartDatas.GroupBy(d => d.boardidx).ToList();
-                Debug.Log($"보드 종류 개수: {boardGroups.Count}");
+                //Debug.Log($"보드 종류 개수: {boardGroups.Count}");
 
                 foreach (var boardGroup in boardGroups)
                 {
@@ -686,8 +697,41 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
         //센서 상태값 갱신
         if (currentObsId <= 0) return;
-        
-        //현재 센서들을 정상으로 초기화
+
+        // *** 핵심: 알람 변경 시 즉시 최신 센서값 가져오기 ***
+        dbManager.GetToxinValueLast(currentObsId, currents =>
+        {
+            // 1. 센서 상태 초기화
+            toxins.ForEach(t => t.status = ToxinStatus.Green);
+
+            // 2. 최신 센서값 업데이트
+            toxins.ForEach(toxin =>
+            {
+                var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                if (curr != null)
+                {
+                    toxin.UpdateValue(curr); // 최신값으로 업데이트
+                }
+            });
+
+            // 3. 알람 상태 반영
+            List<LogData> logsInCurrentObs = logDataList.Where(log => log.obsId == currentObsId).ToList();
+            logsInCurrentObs.ForEach(log => {
+                ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
+                ToxinData toxin = toxins.Find(t => t.boardid == log.boardId && (logStatus == ToxinStatus.Purple || t.hnsid == log.hnsId));
+
+                if (toxin != null)
+                {
+                    toxin.status = (ToxinStatus)Math.Max((int)logStatus, (int)toxin.status);
+                }
+            });
+
+            // 4. UI 업데이트 (상태 + 값 모두)
+            uiManager.Invoke(UiEventType.ChangeSensorStatus);
+            uiManager.Invoke(UiEventType.ChangeTrendLine);
+        });
+
+        /*//현재 센서들을 정상으로 초기화
         toxins.ForEach(t => t.status = ToxinStatus.Green);
 
         //현 관측소 알람만 
@@ -704,7 +748,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
         });
 
-        uiManager.Invoke(UiEventType.ChangeSensorStatus);
+        uiManager.Invoke(UiEventType.ChangeSensorStatus);*/
     }
 
     private void OnCommitBoardFixing(object obj)

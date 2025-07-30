@@ -74,6 +74,9 @@ public class ObsMonitoringItem : MonoBehaviour
 
         ToxinStatus sensorStatus = modelProvider.GetSensorStatus(obsId, toxin.boardid, toxin.hnsid);
         imgSignalLamp.color = statusColorDic[sensorStatus];
+
+        // *** 추가: 실시간 값도 함께 업데이트 ***
+        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
     }
 
 
