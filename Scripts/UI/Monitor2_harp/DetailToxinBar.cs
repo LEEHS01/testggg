@@ -329,10 +329,48 @@ internal class DetailToxinBar : MonoBehaviour
         return mousePos;
     }
 
+    private bool wasMouseInChartArea = false;
+
     void Update()
     {
-        //Debug.Log("DetailToxinBar Update() 실행됨!");
-        CheckMouseHover();
+        bool isInChart = IsMouseInChartArea();
+
+        if (isInChart != wasMouseInChartArea)
+        {
+            Debug.Log(isInChart ? "🟢 차트 진입!" : "🔴 차트 퇴장!");
+            wasMouseInChartArea = isInChart;
+        }
+
+        if (isInChart)
+        {
+            CheckMouseHover();
+        }
+        else if (tooltip.activeInHierarchy)
+        {
+            HideTooltip();
+        }
+
+        //CheckMouseHover();
+    }
+
+    private bool IsMouseInChartArea()
+    {
+        if (chartArea == null) return false;
+
+        Vector3 display2MousePos = GetDisplay2MousePosition();
+        if (display2MousePos == Vector3.negativeInfinity) return false;
+
+        Vector2 localMousePos;
+        bool isInside = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            chartArea, display2MousePos, null, out localMousePos);
+
+        if (!isInside) return false;
+
+        // 차트 영역 + 약간의 여유 공간
+        Rect expandedRect = chartArea.rect;
+        expandedRect.xMax += 30;
+
+        return expandedRect.Contains(localMousePos);
     }
     private void CheckMouseHover()
     {
@@ -433,8 +471,8 @@ internal class DetailToxinBar : MonoBehaviour
         float yPos = chartRect.yMin + chartRect.height * normalizedValue;
 
         // 디버깅 로그 추가
-        Debug.Log($"노드 {index}: value={value:F2}, normalizedValue={normalizedValue:F3}, " +
-                 $"maxValue={maxValue:F2}, minValue={minValue:F2}, yPos={yPos:F2}");
+       /* Debug.Log($"노드 {index}: value={value:F2}, normalizedValue={normalizedValue:F3}, " +
+                 $"maxValue={maxValue:F2}, minValue={minValue:F2}, yPos={yPos:F2}");*/
 
         Vector2 result = new Vector2(xPos, yPos);
         return result;

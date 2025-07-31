@@ -164,6 +164,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             //float variance = seps.Select(v => (v - seps.Average()) * (v - seps.Average())).Average();
             //float stdDev = (float)Math.Sqrt(variance);
             //Debug.Log("CHECKTIME stdDev :" + stdDev);
+            changedList = changedList.OrderBy(x => x.alacode).ToList();
 
             //변경사항들을 신규 알람과 해제된 알람으로 구분
             List<AlarmLogModel> toAddModels = changedList.Where(changed => Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
@@ -183,6 +184,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             {
                 Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 발생했습니다 \n" +
                     $"기존 : {logDataList.Count + toRemoveModels.Count - toAddModels.Count} 신규 : {toAddModels.Count} 해제 : {toRemoveIndexes.ToList().Count} 현재 : {logDataList.Count}");
+
                 //ChangeAlarmList 이벤트
                 uiManager.Invoke(UiEventType.ChangeAlarmList);
             }
@@ -193,7 +195,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             }
         });
 
-        DOVirtual.DelayedCall(30, GetAlarmChangedProcess);
+        DOVirtual.DelayedCall(8, GetAlarmChangedProcess);
     }
 
     void GetStepProcess() 
@@ -542,19 +544,19 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
                 foreach (var boardGroup in boardGroups)
                 {
-                    Debug.Log($"\n--- Board {boardGroup.Key} ---");
-                    Debug.Log($"데이터 개수: {boardGroup.Count()}");
+                    //Debug.Log($"\n--- Board {boardGroup.Key} ---");
+                    //Debug.Log($"데이터 개수: {boardGroup.Count()}");
 
                     // 각 보드 내에서 HNS별 그룹화
                     var hnsGroups = boardGroup.GroupBy(d => d.hnsidx).ToList();
-                    Debug.Log($"HNS 종류 개수: {hnsGroups.Count}");
+                    //Debug.Log($"HNS 종류 개수: {hnsGroups.Count}");
 
                     foreach (var hnsGroup in hnsGroups)
                     {
                         var firstData = hnsGroup.First();
-                        Debug.Log($"  HNS {hnsGroup.Key}: {hnsGroup.Count()}개 데이터");
-                        Debug.Log($"    샘플 값: val={firstData.val}, aival={firstData.aival}");
-                        Debug.Log($"    시간 범위: {hnsGroup.Min(d => d.obsdt)} ~ {hnsGroup.Max(d => d.obsdt)}");
+                        //Debug.Log($"  HNS {hnsGroup.Key}: {hnsGroup.Count()}개 데이터");
+                        //Debug.Log($"    샘플 값: val={firstData.val}, aival={firstData.aival}");
+                        //Debug.Log($"    시간 범위: {hnsGroup.Min(d => d.obsdt)} ~ {hnsGroup.Max(d => d.obsdt)}");
                     }
                 }
                 int countExpected = Mathf.FloorToInt((Option.TREND_DURATION_LOG * 60f) / Option.TREND_TIME_INTERVAL);

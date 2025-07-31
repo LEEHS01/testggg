@@ -63,6 +63,12 @@ public class AlarmList : MonoBehaviour
     {
         List<LogData> logs = modelProvider.GetAlarms();
         list = logs;
+        // 받아온 데이터의 시간 확인
+        Debug.Log("=== DB에서 받아온 원본 데이터 시간 ===");
+        for (int i = 0; i < Math.Min(5, logs.Count); i++)
+        {
+            Debug.Log($"{i}: {logs[i].time:yyyy-MM-dd HH:mm:ss} - {logs[i].hnsName}");
+        }
         // 드롭다운에 지역명 옵션 자동 추가
         var areaNames = logs.Select(log => log.areaName).Distinct().ToList();
         areaNames.Insert(0, "전체");
@@ -177,48 +183,83 @@ public class AlarmList : MonoBehaviour
         }
     }
 
+    
 
+    // UI 토글 기능도 포함한 완전한 정렬 메서드
+    public void OnClickTimeUp()
+    {
+        // UI 토글
+        GameObject.Find("Image_UP").SetActive(true);
+        GameObject.Find("Image_DOWN").SetActive(false);
+
+        // 실제 정렬 실행
+        OnClickOrder(AlramOrder.TIME_UP.ToString());
+    }
     public void OnClickOrder(string order)
     {
+        //Debug.Log($"정렬 실행: {order}");
+
+        // 정렬 전 DateTime 값들 확인
+        //Debug.Log("=== 정렬 전 시간 확인 ===");
+        for (int i = 0; i < Math.Min(3, list.Count); i++)
+        {
+           // Debug.Log($"{i}: {list[i].time:yyyy-MM-dd HH:mm:ss} - {list[i].hnsName}");
+        }
+
         this.list.Sort((a, b) =>
         {
             if (order == AlramOrder.TIME_UP.ToString())
             {
-                return b.time.CompareTo(a.time);
+                //Debug.Log("🔵 TIME_UP 정렬 로직 실행 - 최신이 위");
+                return a.time.CompareTo(b.time);
             }
             else if (order == AlramOrder.TIME_DOWN.ToString())
             {
-                return a.time.CompareTo(b.time);
+                //Debug.Log("🔴 TIME_DOWN 정렬 로직 실행 - 과거가 위");
+                return b.time.CompareTo(a.time);
             }
+            // STATUS는 실제 상태값(status)으로 정렬
+            // status: 0=설비이상(가장심각), 1=경보, 2=경계(가장낮음)
             else if (order == AlramOrder.STATUS_UP.ToString())
             {
-                return b.hnsName.CompareTo(a.hnsName);
+                return a.status.CompareTo(b.status);  // 심각한 순서: 설비이상→경보→경계 (0→1→2)
             }
             else if (order == AlramOrder.STATUS_DOWN.ToString())
             {
-                return a.hnsName.CompareTo(b.hnsName);
+                return b.status.CompareTo(a.status);  // 낮은 순서: 경계→경보→설비이상 (2→1→0)
             }
+            // MAP은 지역명(areaName)으로 정렬
             else if (order == AlramOrder.MAP_UP.ToString())
             {
-                return b.areaName.CompareTo(a.areaName);
+                return b.areaName.CompareTo(a.areaName);  // Z→A 순서
             }
             else if (order == AlramOrder.MAP_DOWN.ToString())
             {
-                return a.areaName.CompareTo(b.areaName);
+                return a.areaName.CompareTo(b.areaName);  // A→Z 순서
             }
+            // AREA는 관측소명(obsName)으로 정렬
             else if (order == AlramOrder.AREA_UP.ToString())
             {
-                return b.obsName.CompareTo(a.obsName);
+                return b.obsName.CompareTo(a.obsName);   // Z→A 순서
             }
             else if (order == AlramOrder.AREA_DOWN.ToString())
             {
-                return a.obsName.CompareTo(b.obsName);
+                return a.obsName.CompareTo(b.obsName);   // A→Z 순서
             }
             return 0;
         });
+
+        // 정렬 후 DateTime 값들 확인
+        Debug.Log("=== 정렬 후 시간 확인 ===");
+        for (int i = 0; i < Math.Min(5, list.Count); i++)
+        {
+            Debug.Log($"{i}: {list[i].time:yyyy-MM-dd HH:mm:ss} - {list[i].hnsName}");
+        }
+
         this.UpdateText();
         this.UpdateFilter();
     }
+  
     public enum AlramOrder
     {
         TIME_UP,
