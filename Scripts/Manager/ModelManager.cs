@@ -195,7 +195,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             }
         });
 
-        DOVirtual.DelayedCall(8, GetAlarmChangedProcess);
+        DOVirtual.DelayedCall(6, GetAlarmChangedProcess);
     }
 
     void GetStepProcess() 

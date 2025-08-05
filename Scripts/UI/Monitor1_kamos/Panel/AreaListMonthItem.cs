@@ -34,6 +34,7 @@ public class AreaListMonthItem : MonoBehaviour
 
     public void SetAreaData(Color color, int areaId, string areaName, int count, float percent)
     {
+        Debug.Log($"SetAreaData 호출: {areaName} = {count}건");
         imgColor.color = color;
         this.areaId = areaId;
         lblAreaName.text = areaName;

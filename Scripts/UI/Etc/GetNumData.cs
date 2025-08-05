@@ -24,7 +24,7 @@ public class GetNumData : MonoBehaviour
         }
 
         // displayType이 1, 2 또는 3인지 확인합니다.
-        if (displayType < 1 || displayType > 3)
+        if (displayType < 1 || displayType > 4)
         {
             Debug.LogError("Display type must be either 1, 2, or 3.");
         }
