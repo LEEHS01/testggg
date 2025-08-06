@@ -391,6 +391,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
                     int nodeCount = (int)((endTime - startTime) / TimeSpan.FromMinutes(Option.TREND_TIME_INTERVAL));
 
+                    // 측정 시간 값 저장
+                    var dateTimes = chartDataForSensor.Select(t => DateTime.Parse(t.obsdt)).ToList();
                     // 부족한 데이터는 0으로 채우기
                     while (values.Count < nodeCount)
                     {
@@ -403,6 +405,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     model.values = values;
                     model.aiValues = aiValues;
                     model.diffValues = diffValues;
+                    model.dateTimes = dateTimes; 
                 });
                 //Debug.LogError($"[5단계] Values 설정 완료");
                 var alarmCount = logDataList.Where(t => t.obsId == obsId).Count();

@@ -39,7 +39,7 @@ public class TitleStatusButton : MonoBehaviour
         btnStatus = GetComponent<Button>();
         lblText = GetComponentInChildren<TMP_Text>();
         imgSignalLamp = GetComponentInChildren<Image>();
-
+        btnStatus.transition = Selectable.Transition.None;
         btnStatus.onClick.AddListener(() => Debug.Log("TODO"));
     }
     private void OnValidate()

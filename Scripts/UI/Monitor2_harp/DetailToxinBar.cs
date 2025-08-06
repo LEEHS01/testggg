@@ -262,15 +262,26 @@ internal class DetailToxinBar : MonoBehaviour
 
     private void SetDynamicHours(int periodDays)
     {
-        DateTime endDt = DateTime.Now;
-        //DateTime startDt = endDt.AddDays(-periodDays);
-        DateTime startDt = endDt.AddHours(-12); // 직접 12시간
-        var interval = (endDt - startDt).TotalMinutes / (this.hours.Count-1);
-
-        for (int i = 0; i < this.hours.Count; i++)
+        // toxinData에 저장된 실제 시간 사용
+        if (toxinData?.dateTimes != null && toxinData.dateTimes.Count > 0)
         {
-            var t = startDt.AddMinutes(interval * i);
-            this.hours[i].text = t.ToString("MM-dd\nHH:mm");
+            Debug.Log($"DB 반환 데이터 개수: {toxinData.dateTimes.Count}");
+            Debug.Log($"첫 데이터: {toxinData.dateTimes.First()}");
+            Debug.Log($"마지막 데이터: {toxinData.dateTimes.Last()}");
+            DateTime actualStartTime = toxinData.dateTimes.First();
+            DateTime actualEndTime = toxinData.dateTimes.Last();
+
+            var interval = (actualEndTime - actualStartTime).TotalMinutes / (this.hours.Count - 1);
+
+            Debug.Log($"🕒 실제 DB 시간 범위: {actualStartTime:HH:mm} ~ {actualEndTime:HH:mm}");
+
+            for (int i = 0; i < this.hours.Count; i++)
+            {
+                var t = actualStartTime.AddMinutes(interval * i);
+                this.hours[i].text = t.ToString("MM-dd\nHH:mm");
+            }
+
+            Debug.Log("✅ 실제 DB 시간으로 라벨 설정 완료");
         }
     }
 
@@ -283,7 +294,7 @@ internal class DetailToxinBar : MonoBehaviour
             float ratio = ((float)this.verticals.Count - i-1) / (verticals.Count-1);
             //Debug.Log("ratio : " + ratio);
             //Debug.Log("Math.Round((verticalMax * ratio),2) : " + Math.Round((verticalMax * ratio),2));
-            this.verticals[i].text = Math.Round((verticalMax * ratio), 2).ToString();
+            this.verticals[i].text = Math.Round((verticalMax * ratio)).ToString();
         }
     }
 
@@ -537,11 +548,21 @@ internal class DetailToxinBar : MonoBehaviour
 
     private DateTime GetTimeForIndex(int index)
     {
-        DateTime endTime = DateTime.Now;
-        DateTime startTime = endTime.AddHours(-12);
-        double intervalMinutes = (endTime - startTime).TotalMinutes / (originalValues.Count - 1);
+        // toxinData에 저장된 실제 시간 직접 사용
+        if (toxinData?.dateTimes != null &&
+            index >= 0 && index < toxinData.dateTimes.Count)
+        {
+            DateTime actualTime = toxinData.dateTimes[index];
+            Debug.Log($"🕒 툴팁 실제 DB 시간: {actualTime:yyyy-MM-dd HH:mm:ss}");
+            return actualTime;
+        }
 
-        return startTime.AddMinutes(intervalMinutes * index);
+        return DateTime.Now; // 간단한 기본값
+        /*  DateTime endTime = DateTime.Now;
+          DateTime startTime = endTime.AddHours(-12);
+          double intervalMinutes = (endTime - startTime).TotalMinutes / (originalValues.Count - 1);
+
+          return startTime.AddMinutes(intervalMinutes * index);*/
     }
     #endregion
 

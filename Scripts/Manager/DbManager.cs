@@ -362,7 +362,7 @@ public class DbManager : MonoBehaviour
         Debug.LogError($"GetChartValueFunc - qurey {query}");
         yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
         {
-            Debug.Log("GetChartValueFunc HNS Chart Response: " + response);
+            Debug.LogError("GetChartValueFunc HNS Chart Response: " + response);
             var entity = JsonConvert.DeserializeObject<List<ChartDataModel>>(response);
             chartData = entity;
         }));

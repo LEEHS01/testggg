@@ -29,8 +29,8 @@ namespace Onthesys
         public bool on = true;
         public bool fix = false;
         public ToxinStatus status = ToxinStatus.Green;
+        public List<DateTime> dateTimes; // 각 값의 실제 측정 시간
 
-        
 
         public ToxinData(HnsResourceModel model)
         {

@@ -35,11 +35,11 @@ internal class ArcBar : MonoBehaviour
 
         Transform dashboard = transform.Find("Dashboard");
         arc = dashboard.Find("Progress").GetComponent<Image>();
-        txtProgress = dashboard.Find("Progress_Value").GetComponent<TMP_Text>();
-        txtMin = dashboard.Find("Min").GetComponent<TMP_Text>();
-        txtMax = dashboard.Find("Max").GetComponent<TMP_Text>();
+        //txtProgress = dashboard.Find("Progress_Value").GetComponent<TMP_Text>();
+        //txtMin = dashboard.Find("Min").GetComponent<TMP_Text>();
+        //txtMax = dashboard.Find("Max").GetComponent<TMP_Text>();
         txtName = transform.Find("Text_DataItem").GetComponent<TMP_Text>();
-        txtTotal = transform.Find("Text_DataUnit").GetComponent<TMP_Text>();
+        //txtTotal = transform.Find("Text_DataUnit").GetComponent<TMP_Text>();
         txtCurrent= transform.Find("Text_DataValue").GetComponent<TMP_Text>();
             
 
@@ -48,8 +48,8 @@ internal class ArcBar : MonoBehaviour
 
         txtName.text = "";
         txtCurrent.text = "";
-        txtProgress.text = "0";
-        txtTotal.text = "";
+        //txtProgress.text = "0";
+        //txtTotal.text = "";
     }
 
 
@@ -60,10 +60,10 @@ internal class ArcBar : MonoBehaviour
         data = toxin;
 
         txtName.text = toxin.hnsName;
-        txtTotal.text = "/" + toxin.warning.ToString();
+        //txtTotal.text = "/" + toxin.warning.ToString();
         //txtCurrent.text = 0;
-        txtMin.text = "0";
-        txtMax.text = toxin.warning.ToString();
+        //txtMin.text = "0";
+        //txtMax.text = toxin.warning.ToString();
 
         DATA_NAME = toxin.hnsName.ToString();
         DATA_USE = toxin.on;
@@ -75,7 +75,7 @@ internal class ArcBar : MonoBehaviour
     {
         if (data == null) return;
         txtCurrent.text =  data.GetLastValue().ToString("F2");
-        txtProgress.text = data.GetLastValue().ToString("F1");
+        //txtProgress.text = data.GetLastValue().ToString("F1");
         gameObject.SetActive(data.on);
 
         arc.DOFillAmount((float)(data.GetLastValuePercent()), 1);
