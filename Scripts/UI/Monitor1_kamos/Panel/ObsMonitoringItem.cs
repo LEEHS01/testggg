@@ -15,7 +15,7 @@ public class ObsMonitoringItem : MonoBehaviour
     //Componenets
     UILineRenderer trdSensor;
     Image imgSignalLamp;
-    TMP_Text lblSensorName, lblThreshold, lblValue;
+    TMP_Text lblSensorName, lblUnit, lblValue;
     Button btnSelectCurrentSensor;
 
     //value
@@ -46,7 +46,7 @@ public class ObsMonitoringItem : MonoBehaviour
 
         lblSensorName = transform.Find("Text (TMP) List").GetComponent<TMP_Text>();
         lblValue = transform.Find("Text (TMP) List (1)").GetComponent<TMP_Text>();
-        lblThreshold= transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>();
+        //lblUnit = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>(); //단위로 수정
         btnSelectCurrentSensor = GetComponent<Button>();
         btnSelectCurrentSensor.onClick.AddListener(OnClick);
     }
@@ -58,7 +58,7 @@ public class ObsMonitoringItem : MonoBehaviour
         //Debug.Log($"ObsMonitoringItem imgSignalLamp is null: {imgSignalLamp == null}");
         this.toxin = toxin;
         lblSensorName.text = toxin.hnsName;
-        lblThreshold.text =  "" + toxin.warning;
+        //lblUnit.text =  "" + toxin.warning;
         lblValue.text = "" + toxin.GetLastValue().ToString("F2");
         this.obsId = obsId;
 

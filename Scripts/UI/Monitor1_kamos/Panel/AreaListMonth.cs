@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -13,7 +14,7 @@ public class AreaListMonth : MonoBehaviour
     ModelProvider modelProvider => UiManager.Instance.modelProvider;
     List<AreaListMonthItem> items = new();
     List<Image> imgRingCharts = new();
-
+    TMP_Text titleText;
     private void Start()
     {
         var items = transform.Find("List_Panel").GetComponentsInChildren<AreaListMonthItem>();
@@ -22,12 +23,24 @@ public class AreaListMonth : MonoBehaviour
         var charts = transform.Find("Doughnut Chart").GetComponentsInChildren<Image>();
         imgRingCharts.AddRange(charts);
 
+        titleText = transform.Find("Title Text (TMP)").GetComponentInChildren<TMP_Text>();
+
         UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
         UiManager.Instance.Register(UiEventType.ChangeAlarmMonthly, OnInitiate);
+    }
+    private void SetCurrentMonthTitle()
+    {
+        if (titleText != null)
+        {
+            DateTime now = DateTime.Now;
+            string monthText = $"{now.Month}월 최다 알람 발생 TOP 5";
+            titleText.text = monthText;
+        }
     }
 
     private void OnInitiate(object obj)
     {
+        SetCurrentMonthTitle();
         var alarmMonthlyList = modelProvider.GetAlarmMonthly();
 
         //DB에서 받은 데이터가 없는 경우, 시연용 데이터로 대체

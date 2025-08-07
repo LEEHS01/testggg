@@ -86,6 +86,7 @@ internal class DetailToxinBar : MonoBehaviour
 
         List<float> normalizedValues = new();
         float max = Math.Max(toxinData.values.Max(), toxinData.warning);
+        //float max = toxinData.values.Max(); // warning 제거
         toxinData.values.ForEach(val => normalizedValues.Add(val / max));
 
         line.UpdateControlPoints(normalizedValues);
@@ -151,7 +152,9 @@ internal class DetailToxinBar : MonoBehaviour
 
         // 정규화 후 라인 그래프 업데이트
         List<float> normalizedValues = new();
+        //기존 warning포함
         float max = Math.Max(toxinData.values.Max(), toxinData.warning);
+        //float max = toxinData.values.Max();
         toxinData.values.ForEach(val => normalizedValues.Add(val / max));
 
         SetVertical(max);
@@ -236,6 +239,7 @@ internal class DetailToxinBar : MonoBehaviour
 
         var convertedData = ConvertToChartData(toxinData);
         line.UpdateControlPoints(convertedData);
+        //SetVertical(Mathf.Max(convertedData.Max()));
         SetVertical(Mathf.Max( convertedData.Max(), toxinData.warning));
         SetDynamicHours(periodDays);
     }
@@ -265,15 +269,15 @@ internal class DetailToxinBar : MonoBehaviour
         // toxinData에 저장된 실제 시간 사용
         if (toxinData?.dateTimes != null && toxinData.dateTimes.Count > 0)
         {
-            Debug.Log($"DB 반환 데이터 개수: {toxinData.dateTimes.Count}");
+            /*Debug.Log($"DB 반환 데이터 개수: {toxinData.dateTimes.Count}");
             Debug.Log($"첫 데이터: {toxinData.dateTimes.First()}");
-            Debug.Log($"마지막 데이터: {toxinData.dateTimes.Last()}");
+            Debug.Log($"마지막 데이터: {toxinData.dateTimes.Last()}");*/
             DateTime actualStartTime = toxinData.dateTimes.First();
             DateTime actualEndTime = toxinData.dateTimes.Last();
 
             var interval = (actualEndTime - actualStartTime).TotalMinutes / (this.hours.Count - 1);
 
-            Debug.Log($"🕒 실제 DB 시간 범위: {actualStartTime:HH:mm} ~ {actualEndTime:HH:mm}");
+            //Debug.Log($"🕒 실제 DB 시간 범위: {actualStartTime:HH:mm} ~ {actualEndTime:HH:mm}");
 
             for (int i = 0; i < this.hours.Count; i++)
             {
@@ -281,7 +285,7 @@ internal class DetailToxinBar : MonoBehaviour
                 this.hours[i].text = t.ToString("MM-dd\nHH:mm");
             }
 
-            Debug.Log("✅ 실제 DB 시간으로 라벨 설정 완료");
+            //Debug.Log("✅ 실제 DB 시간으로 라벨 설정 완료");
         }
     }
 
@@ -440,6 +444,7 @@ internal class DetailToxinBar : MonoBehaviour
         for (int i = 0; i < originalValues.Count; i++)
         {
             Vector2 pointPos = ConvertChartToLocalPosition(i, originalValues[i]);
+            Debug.Log($"📊 데이터포인트 {i} Y: {pointPos.y}, 값: {originalValues[i]}");
             float distance = Vector2.Distance(mousePos, pointPos);
 
             if (distance < 20f && distance < minDistance)
@@ -462,6 +467,7 @@ internal class DetailToxinBar : MonoBehaviour
 
         // 값을 0~1 범위로 정규화 (음수 방지)
         float maxValue = Mathf.Max(originalValues.Max(), toxinData.warning);
+        //float maxValue = originalValues.Max();
         float minValue = Mathf.Min(originalValues.Min(), 0f); // 최소값도 고려
 
         float normalizedValue;
@@ -553,7 +559,7 @@ internal class DetailToxinBar : MonoBehaviour
             index >= 0 && index < toxinData.dateTimes.Count)
         {
             DateTime actualTime = toxinData.dateTimes[index];
-            Debug.Log($"🕒 툴팁 실제 DB 시간: {actualTime:yyyy-MM-dd HH:mm:ss}");
+            //Debug.Log($"🕒 툴팁 실제 DB 시간: {actualTime:yyyy-MM-dd HH:mm:ss}");
             return actualTime;
         }
 

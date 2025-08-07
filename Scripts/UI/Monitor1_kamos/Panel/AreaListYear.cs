@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
 
@@ -11,18 +12,31 @@ public class AreaListYear : MonoBehaviour
 {
     ModelProvider modelProvider => UiManager.Instance.modelProvider;
     List<AreaListYearItem> items = new();
+    TMP_Text titleText;
 
     private void Start()
     {
         var items = transform.Find("List_Panel").GetComponentsInChildren<AreaListYearItem>();
         this.items.AddRange(items);
 
+        titleText = transform.Find("Title Text (TMP)").GetComponentInChildren<TMP_Text>();
+
         UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
         UiManager.Instance.Register(UiEventType.ChangeAlarmYearly, OnInitiate);
+    }
+    private void SetCurrentMonthTitle()
+    {
+        if (titleText != null)
+        {
+            DateTime now = DateTime.Now;
+            string monthText = $"{now.Year}년 알람 발생 TOP5";
+            titleText.text = monthText;
+        }
     }
 
     private void OnInitiate(object obj)
     {
+        SetCurrentMonthTitle();
         var alarmYearlyList = modelProvider.GetAlarmYearly();
 
         //DB에서 받은 데이터가 없는 경우, 시연용 데이터로 대체

@@ -32,7 +32,7 @@ public class AreaListType : MonoBehaviour
         imgAreaType.sprite = areaType == AreaData.AreaType.Ocean ? oceanSprite : nuclearSprite;
 
         lblTitle = transform.Find("Text (TMP)").GetComponent<TMP_Text>();
-        lblTitle.text = areaType == AreaData.AreaType.Ocean ? "해양산업시설 방류구 및 주변 해역 현황" : "발전소 방류구 및 주변 해역 현황";
+        lblTitle.text = areaType == AreaData.AreaType.Ocean ? "해양산업시설 방류구 주변 관측소 현황" : "발전소 방루규 주변 관측소 현황";
     }
 
     private void Start()
