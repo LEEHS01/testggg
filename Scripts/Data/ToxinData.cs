@@ -30,9 +30,10 @@ namespace Onthesys
         public bool fix = false;
         public ToxinStatus status = ToxinStatus.Green;
         public List<DateTime> dateTimes; // 각 값의 실제 측정 시간
+        public string unit;  // 단위 추가
 
 
-        public ToxinData(HnsResourceModel model)
+        public ToxinData(HnsResourceModel model, string unit = "")
         {
             this.boardid = model.boardidx;
             this.hnsid = model.hnsidx;
@@ -46,6 +47,7 @@ namespace Onthesys
             this.values = new List<float>();
             this.aiValues = new List<float>();
             this.diffValues = new List<float>();
+            this.unit = unit;  //단위 설정
         }
 
         public void UpdateValue(CurrentDataModel model)

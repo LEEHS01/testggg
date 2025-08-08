@@ -323,7 +323,7 @@ public class DbManager : MonoBehaviour
         }));
         curDatas = curDatas.Where(current =>
         !(current.boardidx == 2 && current.hnsidx > 19) && // 화학물질 센서 19개로 제한
-        !(current.boardidx == 3 && current.hnsidx > 4)     // 수질 센서 4개로 제한
+        !(current.boardidx == 3 && current.hnsidx > 6)     // 수질 센서 6개로 제한
     ).ToList();
         callback(curDatas);
     }
@@ -338,15 +338,17 @@ public class DbManager : MonoBehaviour
             var entity = JsonConvert.DeserializeObject<List<HnsResourceModel>>(response);
 
             entity.ForEach(model =>
-                toxinDatas.Add(new ToxinData(model))
-            );
+        {
+            Debug.Log($"센서: {model.hnsnm}, Unit: '{model.unit}'"); // ← 디버그 추가
+            toxinDatas.Add(new ToxinData(model, model.unit ?? ""));
+        });
 
         }));
 
         // 필터링 적용
         toxinDatas = toxinDatas.Where(toxin =>
             !(toxin.boardid == 2 && toxin.hnsid > 19) && // 화학물질 센서 19개로 제한
-            !(toxin.boardid == 3 && toxin.hnsid > 4)     // 수질 센서 4개로 제한
+            !(toxin.boardid == 3 && toxin.hnsid > 6)     // 수질 센서 6개로 제한
         ).ToList();
 
 

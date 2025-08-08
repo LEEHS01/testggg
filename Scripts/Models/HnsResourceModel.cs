@@ -18,5 +18,6 @@ namespace Onthesys
         public float? alahihival;
         public float? alahihisec;
         public string inspectionflag;
+        public string unit;
     }
 }

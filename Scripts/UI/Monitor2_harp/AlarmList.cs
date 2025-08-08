@@ -69,6 +69,10 @@ public class AlarmList : MonoBehaviour
         {
             Debug.Log($"{i}: {logs[i].time:yyyy-MM-dd HH:mm:ss} - {logs[i].hnsName}");
         }
+
+        this.list.Sort((a, b) => b.time.CompareTo(a.time));
+
+
         // 드롭다운에 지역명 옵션 자동 추가
         var areaNames = logs.Select(log => log.areaName).Distinct().ToList();
         areaNames.Insert(0, "전체");
@@ -211,12 +215,12 @@ public class AlarmList : MonoBehaviour
             if (order == AlramOrder.TIME_UP.ToString())
             {
                 //Debug.Log("🔵 TIME_UP 정렬 로직 실행 - 최신이 위");
-                return a.time.CompareTo(b.time);
+                return b.time.CompareTo(a.time);  // 변경: 최신이 위로 오도록
             }
             else if (order == AlramOrder.TIME_DOWN.ToString())
             {
                 //Debug.Log("🔴 TIME_DOWN 정렬 로직 실행 - 과거가 위");
-                return b.time.CompareTo(a.time);
+                return a.time.CompareTo(b.time);  // 변경: 과거가 위로 오도록
             }
             // STATUS는 실제 상태값(status)으로 정렬
             // status: 0=설비이상(가장심각), 1=경보, 2=경계(가장낮음)

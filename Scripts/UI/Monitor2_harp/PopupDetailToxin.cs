@@ -60,8 +60,9 @@ internal class PopupDetailToxin : MonoBehaviour
 
         this.data = toxin;
         this.txtName.text = toxin.hnsName.Replace("\n", string.Empty);
-        this.txtCurrent.text = Math.Round(toxin.GetLastValue(), 2).ToString();
-        this.txtTotal.text = Math.Round(toxin.warning, 2).ToString();
+        //현재값, 임계값 삭제
+        //this.txtCurrent.text = Math.Round(toxin.GetLastValue(), 2).ToString();
+        //this.txtTotal.text = Math.Round(toxin.warning, 2).ToString();
 
         // 그래프 바가 제대로 활성화되지 않으면 활성화
         bars.ForEach(bar => bar.gameObject.SetActive(true));
@@ -137,7 +138,7 @@ internal class PopupDetailToxin : MonoBehaviour
             if (IsAnomalousValue(originalValues[i]))
             {
                 // 직전값 사용 (첫 번째 값이 이상값이면 0 사용)
-                float replacementValue = i > 0 ? processedValues[i - 1] : 0f;
+                float replacementValue = 0f;
                 processedValues.Add(replacementValue);
 
                 Debug.Log($"이상값 감지 및 대체: index={i}, original={originalValues[i]}, replacement={replacementValue}");

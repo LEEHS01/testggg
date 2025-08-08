@@ -17,7 +17,7 @@ internal class ArcBar : MonoBehaviour
 {
     TMP_Text txtProgress;
     TMP_Text txtName;
-    TMP_Text txtTotal;
+    TMP_Text txtUnit;
     TMP_Text txtMin;
     TMP_Text txtMax;
     TMP_Text txtCurrent;
@@ -39,8 +39,8 @@ internal class ArcBar : MonoBehaviour
         //txtMin = dashboard.Find("Min").GetComponent<TMP_Text>();
         //txtMax = dashboard.Find("Max").GetComponent<TMP_Text>();
         txtName = transform.Find("Text_DataItem").GetComponent<TMP_Text>();
-        //txtTotal = transform.Find("Text_DataUnit").GetComponent<TMP_Text>();
-        txtCurrent= transform.Find("Text_DataValue").GetComponent<TMP_Text>();
+        txtUnit = transform.Find("Text_DataUnit").GetComponent<TMP_Text>();
+        txtCurrent = transform.Find("Text_DataValue").GetComponent<TMP_Text>();
             
 
         btnSelectToxin = GetComponent<Button>();
@@ -49,7 +49,7 @@ internal class ArcBar : MonoBehaviour
         txtName.text = "";
         txtCurrent.text = "";
         //txtProgress.text = "0";
-        //txtTotal.text = "";
+        txtUnit.text = "";
     }
 
 
@@ -60,7 +60,7 @@ internal class ArcBar : MonoBehaviour
         data = toxin;
 
         txtName.text = toxin.hnsName;
-        //txtTotal.text = "/" + toxin.warning.ToString();
+        txtUnit.text = toxin.unit ?? "";  //단위 설정
         //txtCurrent.text = 0;
         //txtMin.text = "0";
         //txtMax.text = toxin.warning.ToString();
@@ -75,6 +75,7 @@ internal class ArcBar : MonoBehaviour
     {
         if (data == null) return;
         txtCurrent.text =  data.GetLastValue().ToString("F2");
+        txtUnit.text = data.unit ?? "";  // 단위 표시
         //txtProgress.text = data.GetLastValue().ToString("F1");
         gameObject.SetActive(data.on);
 

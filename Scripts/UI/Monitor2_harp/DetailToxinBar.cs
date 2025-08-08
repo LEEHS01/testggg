@@ -85,9 +85,19 @@ internal class DetailToxinBar : MonoBehaviour
 
 
         List<float> normalizedValues = new();
-        float max = Math.Max(toxinData.values.Max(), toxinData.warning);
-        //float max = toxinData.values.Max(); // warning 제거
-        toxinData.values.ForEach(val => normalizedValues.Add(val / max));
+        //float max = Math.Max(toxinData.values.Max(), toxinData.warning);
+        float max = toxinData.values.Max(); // warning 제거
+        if (max <= 0)
+        {
+            // 모든 값이 0 이하면 → 정규화 값도 모두 0
+            toxinData.values.ForEach(val => normalizedValues.Add(0f));
+        }
+        else
+        {
+            // 정상적인 정규화
+            toxinData.values.ForEach(val => normalizedValues.Add(val / max));
+        }
+
 
         line.UpdateControlPoints(normalizedValues);
 
@@ -144,18 +154,27 @@ internal class DetailToxinBar : MonoBehaviour
             Debug.LogWarning($"[OnSelectCurrentSensor] 센서 값이 비어 있음 (boardId={boardId}, hnsId={hnsId})");
             return;
         }
-        Debug.Log($"toxinData.values 개수: {toxinData.values.Count}");
-        Debug.Log($"toxinData.warning: {toxinData.warning}");
+       
 
         // 이름 표시
         txtName.text = toxinData.hnsName;
 
+        Debug.Log($"Min: {toxinData.values.Min()}, Max: {toxinData.values.Max()}, Average: {toxinData.values.Average()}");
         // 정규화 후 라인 그래프 업데이트
         List<float> normalizedValues = new();
-        //기존 warning포함
-        float max = Math.Max(toxinData.values.Max(), toxinData.warning);
-        //float max = toxinData.values.Max();
-        toxinData.values.ForEach(val => normalizedValues.Add(val / max));
+        //float max = Math.Max(toxinData.values.Max(), toxinData.warning);
+        float max = toxinData.values.Max();
+        //float max = Math.Max(toxinData.values.Max(), 1.0f);
+        if (max <= 0)
+        {
+            // 모든 값이 0 이하면 → 정규화 값도 모두 0
+            toxinData.values.ForEach(val => normalizedValues.Add(0f));
+        }
+        else
+        {
+            // 정상적인 정규화
+            toxinData.values.ForEach(val => normalizedValues.Add(val / max));
+        }
 
         SetVertical(max);
         SetDynamicHours(1);
@@ -239,8 +258,8 @@ internal class DetailToxinBar : MonoBehaviour
 
         var convertedData = ConvertToChartData(toxinData);
         line.UpdateControlPoints(convertedData);
-        //SetVertical(Mathf.Max(convertedData.Max()));
-        SetVertical(Mathf.Max( convertedData.Max(), toxinData.warning));
+        SetVertical(Mathf.Max(convertedData.Max()));
+        //SetVertical(Mathf.Max( convertedData.Max(), toxinData.warning));
         SetDynamicHours(periodDays);
     }
 
@@ -444,7 +463,7 @@ internal class DetailToxinBar : MonoBehaviour
         for (int i = 0; i < originalValues.Count; i++)
         {
             Vector2 pointPos = ConvertChartToLocalPosition(i, originalValues[i]);
-            Debug.Log($"📊 데이터포인트 {i} Y: {pointPos.y}, 값: {originalValues[i]}");
+            //Debug.Log($"📊 데이터포인트 {i} Y: {pointPos.y}, 값: {originalValues[i]}");
             float distance = Vector2.Distance(mousePos, pointPos);
 
             if (distance < 20f && distance < minDistance)
@@ -466,8 +485,8 @@ internal class DetailToxinBar : MonoBehaviour
             (float)index / (originalValues.Count - 1) : 0f;
 
         // 값을 0~1 범위로 정규화 (음수 방지)
-        float maxValue = Mathf.Max(originalValues.Max(), toxinData.warning);
-        //float maxValue = originalValues.Max();
+        //float maxValue = Mathf.Max(originalValues.Max(), toxinData.warning);
+        float maxValue = originalValues.Max();
         float minValue = Mathf.Min(originalValues.Min(), 0f); // 최소값도 고려
 
         float normalizedValue;

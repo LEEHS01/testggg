@@ -17,7 +17,7 @@ internal class ToxinBar2 : MonoBehaviour
     //Componenets
     UILineRenderer trdSensor;
     Image imgSignalLamp;
-    TMP_Text lblSensorName, lblThreshold, lblValue;
+    TMP_Text lblSensorName, lblUnit, lblValue;
     Button btnSelectCurrentSensor;
 
     //value
@@ -48,7 +48,8 @@ internal class ToxinBar2 : MonoBehaviour
 
         lblSensorName = transform.Find("Text (TMP) List").GetComponent<TMP_Text>();
         lblValue = transform.Find("Text (TMP) List (1)").GetComponent<TMP_Text>();
-        lblThreshold = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>();
+        //임계값 사라지고 단위로 바낌
+        lblUnit = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>();
         btnSelectCurrentSensor = GetComponent<Button>();
         btnSelectCurrentSensor.onClick.AddListener(OnClick);
 
@@ -63,8 +64,10 @@ internal class ToxinBar2 : MonoBehaviour
 
         //라벨과 램프등 제어
         lblSensorName.text = toxin.hnsName;
-        lblThreshold.text = "" + toxin.warning;
+        //lblUnit.text = "" + toxin.warning;
         lblValue.text = "" + toxin.GetLastValue().ToString("F2");
+
+        lblUnit.text = toxin.unit ?? "";  // ← ArcBar처럼 간단하게!
 
         gameObject.SetActive(toxin.on);
 
@@ -85,7 +88,7 @@ internal class ToxinBar2 : MonoBehaviour
     {
         Debug.Log($"ToxinBar2 클릭됨: {toxin.hnsName}, boardId={toxin.boardid}, hnsId={toxin.hnsid}");
         int boardId = toxin.boardid;
-        int hnsId = toxin.boardid == 1 ? 0 : toxin.hnsid;
+        int hnsId = toxin.hnsid;
         UiManager.Instance.Invoke(UiEventType.SelectAlarmSensor, (boardId, hnsId));
     }
 

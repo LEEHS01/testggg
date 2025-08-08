@@ -38,7 +38,7 @@ public class AlarmListItem : MonoBehaviour
     public void SetText(LogData data)
     {
         this.data = data;
-        this.txtTime.text = data.time.ToString("HH:mm");
+        this.txtTime.text = data.time.ToString("yy.MM.dd HH:mm");
         this.txtDesc.text = data.hnsName;
         this.txtMap.text = data.areaName;
         this.txtArea.text = data.obsName;
