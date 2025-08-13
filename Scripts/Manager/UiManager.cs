@@ -146,10 +146,9 @@ public class UiManager : MonoBehaviour
 
     public void Invoke(UiEventType eventType, object payload = null)
     {
-        if (eventType == UiEventType.NavigateObs)
+        if (eventType == UiEventType.ChangeTrendLine)
         {
-            //Debug.Log($"NavigateObs 이벤트 발생: payload={payload}");
-            //Debug.Log($"호출 위치:\n{System.Environment.StackTrace}");
+            Debug.Log($"ChangeTrendLine 호출! 스택트레이스:\n{System.Environment.StackTrace}");
         }
         if (eventHandlers.ContainsKey(eventType))
         {

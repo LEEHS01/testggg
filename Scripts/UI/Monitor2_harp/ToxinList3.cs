@@ -32,7 +32,8 @@ internal class ToxinList3 : MonoBehaviour
 
         toxinItems = scrollContent.Find("gridsUpper").Find("Grid_Toxin").GetComponentsInChildren<ArcBar>().ToList();
         qualityItems = scrollContent.Find("gridsUpper").Find("Grid_Water_Quality").GetComponentsInChildren<ArcBar>().ToList();
-        chemicalItems = scrollContent.Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
+        chemicalItems = scrollContent.Find("gridsUpper").Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
+        //chemicalItems = scrollContent.Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
 
         allItems.AddRange(toxinItems);
         allItems.AddRange(qualityItems);
@@ -164,19 +165,22 @@ internal class ToxinList3 : MonoBehaviour
         }
 
         //전체 아이템 순회
-        for (int i = 0; i < toxinsInBoard.Count; i++)
+        for (int i = 0; i < items.Count; i++)
         {
             ArcBar item = items[i];
-            ToxinData toxin = toxinsInBoard[i];
 
-            //빈자리라면 비활성화
-            if (i + 1 > toxinsInBoard.Count)
+            // 필터링된 데이터 범위 내라면 활성화
+            if (i < toxinsInBoard.Count)
             {
-                item.gameObject.SetActive(false);
-                continue;
+                ToxinData toxin = toxinsInBoard[i];
+                item.SetValue(toxin);
+                // SetValue 내부에서 toxin.on에 따라 활성화 결정됨
             }
-
-            item.SetValue(toxin);
+            else
+            {
+                // 필터링된 데이터 범위를 벗어나면 비활성화
+                item.gameObject.SetActive(false);
+            }
         }
 
         //크기 초기화

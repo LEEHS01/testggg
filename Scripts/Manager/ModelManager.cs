@@ -733,7 +733,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             // 4. UI 업데이트 (상태 + 값 모두)
             uiManager.Invoke(UiEventType.ChangeSensorStatus);
-            uiManager.Invoke(UiEventType.ChangeTrendLine);
+            //uiManager.Invoke(UiEventType.ChangeTrendLine);
         });
 
         /*//현재 센서들을 정상으로 초기화

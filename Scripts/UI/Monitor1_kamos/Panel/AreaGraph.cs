@@ -66,7 +66,10 @@ public class AreaGraph : MonoBehaviour
 
         int maxValue = summaries.Max(summary => summary.cnt);
         for (int i = lblValues.Count - 1; i >= 0; i--)
-            lblValues[i].text = Mathf.RoundToInt((float)maxValue * i / (lblValues.Count - 1)).ToString();
+        {
+            int value = Mathf.RoundToInt((float)maxValue * i / (lblValues.Count - 1));
+            lblValues[i].text = value.ToString("N0"); // 천자리 쉼표 추가
+        }
 
         // 현재월 기준 최근 12개월 리스트 생성
         DateTime now = DateTime.Now;

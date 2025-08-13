@@ -31,6 +31,7 @@ namespace Onthesys
         public ToxinStatus status = ToxinStatus.Green;
         public List<DateTime> dateTimes; // 각 값의 실제 측정 시간
         public string unit;  // 단위 추가
+        public string stcd = "00";  // STCD 상태코드 추가
 
 
         public ToxinData(HnsResourceModel model, string unit = "")
@@ -48,6 +49,7 @@ namespace Onthesys
             this.aiValues = new List<float>();
             this.diffValues = new List<float>();
             this.unit = unit;  //단위 설정
+            this.stcd = "00"; // 기본값: 정상
         }
 
         public void UpdateValue(CurrentDataModel model)
@@ -62,6 +64,7 @@ namespace Onthesys
                 this.warning = model.hihi;
                 this.on = Convert.ToInt32(model.useyn) == 1;
                 this.fix = Convert.ToInt32(model.fix) == 1;
+                this.stcd = model.stcd ?? "00";
                 this.SetLastValue(model.val);
                 /*if (hnsid == 4 && boardid == 3)
                     Debug.LogError($"UpdateValue aft {this.on} {model.useyn}");*/

@@ -343,25 +343,53 @@ internal class DetailToxinBar : MonoBehaviour
     }
 
     #region 툴팁
-    private Vector3 GetDisplay2MousePosition()
+    /// <summary>
+    /// 캔버스(Target Display 포함)를 기준으로 올바른 스크린 좌표를 얻는다.
+    /// RelativeMouseAt가 유효하면 그 값을 쓰고, 아니면 스케일 보정으로 폴백.
+    /// 모든 배열 접근은 범위 체크 후 실행한다.
+    /// </summary>
+    private bool TryGetPointerOnCanvas(Canvas canvas, out Vector2 screenPos)
     {
-        Vector3 mousePos = Input.mousePosition;
+#if UNITY_EDITOR
+        // 에디터에서는 그냥 현재 마우스 좌표 사용
+        screenPos = Input.mousePosition;
+        return true;
+#else
+    screenPos = default;
+    int target = (canvas != null) ? canvas.targetDisplay : 0;
 
-        // Input.mousePosition은 항상 Display 1 기준이므로
-        // Display 2로 변환하려면 Display 1의 너비만큼 빼기
-        if (Display.displays.Length > 1)
-        {
-            mousePos.x -= Display.displays[0].systemWidth;
+    if (target < 0 || target >= Display.displays.Length)
+        return false;
 
-            // 마우스가 Display 1에 있으면 음수가 됨
-            if (mousePos.x < 0 || mousePos.x > Display.displays[1].systemWidth)
-            {
-                return Vector3.negativeInfinity; // 범위 밖임을 표시
-            }
-        }
+    Vector3 raw = Input.mousePosition;
 
-        return mousePos;
+    Vector3 rel = Display.RelativeMouseAt(raw);
+    if (rel != Vector3.zero && (int)rel.z == target)
+    {
+        screenPos = new Vector2(rel.x, rel.y);
+        return true;
     }
+
+    float x = raw.x;
+    int count = Mathf.Min(target, Display.displays.Length - 1);
+    for (int i = 0; i < count; i++)
+        x -= Display.displays[i].systemWidth;
+
+    Display disp = Display.displays[target];
+    float sx = (disp.systemWidth > 0) ? (float)disp.renderingWidth / disp.systemWidth : 1f;
+    float sy = (disp.systemHeight > 0) ? (float)disp.renderingHeight / disp.systemHeight : 1f;
+
+    x *= sx;
+    float y = raw.y * sy;
+
+    if (x < 0 || y < 0 || x > disp.renderingWidth || y > disp.renderingHeight)
+        return false;
+
+    screenPos = new Vector2(x, y);
+    return true;
+#endif
+    }
+
 
     private bool wasMouseInChartArea = false;
 
@@ -391,69 +419,51 @@ internal class DetailToxinBar : MonoBehaviour
     {
         if (chartArea == null) return false;
 
-        Vector3 display2MousePos = GetDisplay2MousePosition();
-        if (display2MousePos == Vector3.negativeInfinity) return false;
+        var canvas = GetComponentInParent<Canvas>();
+
+        if (!TryGetPointerOnCanvas(canvas, out var screenPos))
+            return false;
 
         Vector2 localMousePos;
-        bool isInside = RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            chartArea, display2MousePos, null, out localMousePos);
+        bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            chartArea, screenPos, null, out localMousePos);
 
-        if (!isInside) return false;
+        if (!ok) return false;
 
-        // 차트 영역 + 약간의 여유 공간
-        Rect expandedRect = chartArea.rect;
-        expandedRect.xMax += 30;
-
-        return expandedRect.Contains(localMousePos);
+        Rect expanded = chartArea.rect;
+        expanded.xMax += 30;
+        return expanded.Contains(localMousePos);
     }
+
     private void CheckMouseHover()
     {
         if (toxinData == null || originalValues.Count == 0) return;
 
-        // Display 2 기준 마우스 좌표 가져오기
-        Vector3 display2MousePos = GetDisplay2MousePosition();
-
-        // 마우스가 Display 2 범위에 없으면 툴팁 숨기기
-        if (display2MousePos == Vector3.negativeInfinity)
+        var canvas = GetComponentInParent<Canvas>();
+        if (!TryGetPointerOnCanvas(canvas, out var screenPos))
         {
             HideTooltip();
             return;
         }
 
-        Vector2 mousePos;
-        bool isInside = RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            chartArea, display2MousePos, null, out mousePos);
+        Vector2 local;
+        bool ok = RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            chartArea, screenPos, null, out local);
 
-        /*// *** 핵심 변경: 확장 영역 제거, 순수 chartArea.rect만 사용 ***
-        if (isInside && chartArea.rect.Contains(mousePos))
-        {
-            int closestIndex = FindClosestDataPoint(mousePos);
-            if (closestIndex >= 0)
-            {
-                ShowTooltip(closestIndex, display2MousePos);
-            }
-        }
-        else
-        {
-            HideTooltip();
-        }*/
+        Rect expanded = chartArea.rect;
+        expanded.xMax += 30;
 
-        Rect expandedRect = chartArea.rect;
-        expandedRect.xMax += 30;
-
-        if (isInside && expandedRect.Contains(mousePos))
+        if (ok && expanded.Contains(local))
         {
-            int closestIndex = FindClosestDataPoint(mousePos);
-            if (closestIndex >= 0)
-            {
-                ShowTooltip(closestIndex, display2MousePos);
-            }
+            int idx = FindClosestDataPoint(local);
+            if (idx >= 0) ShowTooltip(idx, screenPos);
         }
         else
         {
             HideTooltip();
         }
     }
+
 
     private int FindClosestDataPoint(Vector2 mousePos)
     {
@@ -514,7 +524,7 @@ internal class DetailToxinBar : MonoBehaviour
         return result;
     }
 
-    private void ShowTooltip(int index, Vector3 screenPosition)
+    private void ShowTooltip(int index, Vector3 _)
     {
         if (tooltip == null) return;
 
@@ -526,45 +536,27 @@ internal class DetailToxinBar : MonoBehaviour
         if (txtTime != null) txtTime.text = time.ToString("yy.MM.dd HH:mm");
         if (txtValue != null) txtValue.text = value.ToString("F2");
 
-        RectTransform tooltipRect = tooltip.GetComponent<RectTransform>();
-        if (tooltipRect == null) return;
+        RectTransform tip = tooltip.GetComponent<RectTransform>();
+        if (tip == null) return;
 
-        // Display 2 기준 마우스 좌표 사용
-        Vector3 display2MousePos = GetDisplay2MousePosition();
-
-        if (display2MousePos == Vector3.negativeInfinity)
+        var canvas = GetComponentInParent<Canvas>();
+        if (!TryGetPointerOnCanvas(canvas, out var screenPos))
         {
             HideTooltip();
             return;
         }
 
-        Canvas canvas = GetComponentInParent<Canvas>();
-        Vector2 localPos;
-
+        Vector2 local;
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvas.transform as RectTransform,
-            display2MousePos,
-            canvas.worldCamera,
-            out localPos))
+            canvas.transform as RectTransform, screenPos, canvas.worldCamera, out local))
         {
-            Vector2 tooltipSize = tooltipRect.sizeDelta;
-
-            // 위치 조정
-            localPos.y += tooltipSize.y / 2 + 60 ;
-
-            if (index >= originalValues.Count - 4)
-            {
-                localPos.x -= 400;
-                /* localPos.x -= tooltipSize.x + 0;*/
-            }
-            else
-            {
-                localPos.x -= 350;
-            }
-
-            tooltipRect.anchoredPosition = localPos;
+            // 기존 보정 그대로 유지
+            local.y += tip.sizeDelta.y / 2 + 60;
+            local.x -= (index >= originalValues.Count - 4) ? 400 : 350;
+            tip.anchoredPosition = local;
         }
     }
+
 
     private void HideTooltip()
     {

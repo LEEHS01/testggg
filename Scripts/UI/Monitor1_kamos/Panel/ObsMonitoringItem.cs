@@ -5,8 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.UI;
+using ColorUtility = UnityEngine.ColorUtility;
 
 public class ObsMonitoringItem : MonoBehaviour
 {
@@ -46,7 +48,7 @@ public class ObsMonitoringItem : MonoBehaviour
 
         lblSensorName = transform.Find("Text (TMP) List").GetComponent<TMP_Text>();
         lblValue = transform.Find("Text (TMP) List (1)").GetComponent<TMP_Text>();
-        //lblUnit = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>(); //단위로 수정
+        lblUnit = transform.Find("Text (TMP) List (2)").GetComponent<TMP_Text>(); //단위로 수정
         btnSelectCurrentSensor = GetComponent<Button>();
         btnSelectCurrentSensor.onClick.AddListener(OnClick);
     }
@@ -60,6 +62,7 @@ public class ObsMonitoringItem : MonoBehaviour
         lblSensorName.text = toxin.hnsName;
         //lblUnit.text =  "" + toxin.warning;
         lblValue.text = "" + toxin.GetLastValue().ToString("F2");
+        lblUnit.text = toxin.unit ?? "";
         this.obsId = obsId;
 
         gameObject.SetActive(toxin.on);
