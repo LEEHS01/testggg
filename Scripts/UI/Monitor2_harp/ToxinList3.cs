@@ -30,10 +30,12 @@ internal class ToxinList3 : MonoBehaviour
 
         Transform scrollContent = transform.Find("Content");
 
-        toxinItems = scrollContent.Find("gridsUpper").Find("Grid_Toxin").GetComponentsInChildren<ArcBar>().ToList();
-        qualityItems = scrollContent.Find("gridsUpper").Find("Grid_Water_Quality").GetComponentsInChildren<ArcBar>().ToList();
-        chemicalItems = scrollContent.Find("gridsUpper").Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
-        //chemicalItems = scrollContent.Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
+        //toxinItems = scrollContent.Find("gridsUpper").Find("Grid_Toxin").GetComponentsInChildren<ArcBar>().ToList();
+        //qualityItems = scrollContent.Find("gridsUpper").Find("Grid_Water_Quality").GetComponentsInChildren<ArcBar>().ToList();
+        //chemicalItems = scrollContent.Find("gridsUpper").Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
+        toxinItems = scrollContent.Find("Grid_Toxin").GetComponentsInChildren<ArcBar>().ToList();
+        qualityItems = scrollContent.Find("Grid_Water_Quality").GetComponentsInChildren<ArcBar>().ToList();
+        chemicalItems = scrollContent.Find("Grid_Chemicals").GetComponentsInChildren<ArcBar>().ToList();
 
         allItems.AddRange(toxinItems);
         allItems.AddRange(qualityItems);

@@ -168,30 +168,36 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             //변경사항들을 신규 알람과 해제된 알람으로 구분
             List<AlarmLogModel> toAddModels = changedList.Where(changed => Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
-            List<AlarmLogModel> toRemoveModels = changedList.Where(changed => changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
+
+            //해제된 알람 유지하기위해 주석처리함
+            //List<AlarmLogModel> toRemoveModels = changedList.Where(changed => changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
 
             //신규 알람을 파싱한 뒤 리스트에 추가
             logDataList.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
 
-            //해제된 알람의 idx를 가진 로그데이터들을 제거
-            IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
-            logDataList.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));
+            //해제된 알람의 idx를 가진 로그데이터들을 제거->>> 해제된 알람 유지를 위한 주석처리
+            /*IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
+            logDataList.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));*/
+
+            DateTime oneWeekAgo = DateTime.Now.AddDays(-7);
+            int removedOldCount = logDataList.RemoveAll(logData => logData.time < oneWeekAgo);
 
             pastTimestamp = newTimestamp;
+
 
             //알람 로그 리스트에 변화가 발생 시
             if (changedList.Count != 0)
             {
                 Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 발생했습니다 \n" +
-                    $"기존 : {logDataList.Count + toRemoveModels.Count - toAddModels.Count} 신규 : {toAddModels.Count} 해제 : {toRemoveIndexes.ToList().Count} 현재 : {logDataList.Count}");
+                    $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
 
                 //ChangeAlarmList 이벤트
                 uiManager.Invoke(UiEventType.ChangeAlarmList);
             }
-            else 
+            else
             {
                 Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 없습니다.\n" +
-                    $"기존 : {logDataList.Count + toRemoveModels.Count - toAddModels.Count} 신규 : {toAddModels.Count} 해제 : {toRemoveIndexes.ToList().Count} 현재 : {logDataList.Count}");
+                    $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
             }
         });
 
@@ -936,9 +942,46 @@ public class ModelManager : MonoBehaviour, ModelProvider
     {
         ToxinStatus highestStatus = ToxinStatus.Green;
 
+        // ★ 디버그: 전체 알람 확인
+        List<LogData> allSensorLogs = GetAlarms().Where(log =>
+            log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId).ToList();
+
+        Debug.Log($"[DEBUG] 센서({boardId}/{hnsId}) 전체 알람: {allSensorLogs.Count}개");
+        foreach (var log in allSensorLogs)
+        {
+            Debug.Log($"  - 알람 idx={log.idx}, 해제됨={log.isCancelled}, 상태={log.status}");
+        }
+
+        // 활성화된 알람만 필터링
+        List<LogData> activeSensorLogs = allSensorLogs.Where(log => !log.isCancelled).ToList();
+
+        Debug.Log($"[DEBUG] 센서({boardId}/{hnsId}) 활성 알람: {activeSensorLogs.Count}개");
+
+        foreach (LogData log in activeSensorLogs)
+        {
+            ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
+            highestStatus = (ToxinStatus)Math.Max((int)highestStatus, (int)logStatus);
+        }
+
+        Debug.Log($"[DEBUG] 센서({boardId}/{hnsId}) 최종 상태: {highestStatus}");
+        return highestStatus;
+    }
+    /*public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
+    {
+        ToxinStatus highestStatus = ToxinStatus.Green;
+
         //지역 내 관측소들을 순회하며 해당 센서의 가장 높은 수준의 알람을 탐색
         ObsData obs = GetObs(obsId);
-        List<LogData> sensorLogs = GetAlarms().FindAll(log => log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId);
+
+        // 해제된 알람 출력 하면서 -> 기존에 모든 알람으로 하다보니 모니터A상태값이 해제된알람의 상태값으로 표현되는 문제
+        //List<LogData> sensorLogs = GetAlarms().FindAll(log => log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId);
+
+        List<LogData> sensorLogs = GetAlarms().FindAll(log =>
+        log.hnsId == hnsId &&
+        log.obsId == obsId &&
+        log.boardId == boardId &&
+        log.isCancelled
+    );
 
         sensorLogs.ForEach(log => {
 
@@ -948,7 +991,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             }
         );
         return highestStatus;
-    }
+    }*/
 
     public DateTime GetCurrentChartEndTime()
     {

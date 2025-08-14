@@ -339,7 +339,7 @@ public class DbManager : MonoBehaviour
 
             entity.ForEach(model =>
         {
-            Debug.Log($"센서: {model.hnsnm}, Unit: '{model.unit}'"); // ← 디버그 추가
+            //Debug.Log($"센서: {model.hnsnm}, Unit: '{model.unit}'"); // ← 디버그 추가
             toxinDatas.Add(new ToxinData(model, model.unit ?? ""));
         });
 

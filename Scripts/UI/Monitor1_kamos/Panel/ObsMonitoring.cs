@@ -149,7 +149,9 @@ public class ObsMonitoring : MonoBehaviour
 
         toxinBoard = toxins.Where(item => item.boardid == 1).ToList();
         chemicalBoard = toxins.Where(item => item.boardid == 2).ToList();
-        qualityBoard = toxins.Where(item => item.boardid == 3).ToList();
+        qualityBoard = toxins.Where(item => item.boardid == 3)
+                            .OrderByDescending(item => item.hnsid)  // OrderBy → OrderByDescending으로 변경
+                            .ToList();
 
         ApplySensorListBoard(toxinBoard, toxinItems);
         ApplySensorListBoard(chemicalBoard, chemicalItems);

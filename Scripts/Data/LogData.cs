@@ -27,8 +27,9 @@ namespace Onthesys
         public float? value;
         public int idx;
         public float serious, warning;
+        public bool isCancelled;
 
-        public LogData(int obsid, int boardid, string areaName, string obsName, int hnsId, string hnsName, DateTime dt, int status, float? val, int idx, float serious, float warning)
+        public LogData(int obsid, int boardid, string areaName, string obsName, int hnsId, string hnsName, DateTime dt, int status, float? val, int idx, float serious, float warning, bool isCancelled = false)
         {
             this.obsId = obsid;
             this.boardId = boardid;
@@ -42,6 +43,7 @@ namespace Onthesys
             this.idx = idx;
             this.serious = serious;
             this.warning = warning;
+            this.isCancelled = isCancelled;
         }
 
         internal static LogData FromAlarmLogModel(AlarmLogModel item) => 
@@ -57,7 +59,9 @@ namespace Onthesys
                 item.currval.HasValue ? item.currval.Value : 0f,
                 item.alaidx,
                 item.alahival.HasValue ? item.alahival.Value : 0f,
-                item.alahihival.HasValue ? item.alahihival.Value : 0f);
+                item.alahihival.HasValue ? item.alahihival.Value : 0f,
+                !string.IsNullOrEmpty(item.turnoff_flag)
+             );
     }
 
 }

@@ -198,12 +198,37 @@ internal class PopupDetailToxin : MonoBehaviour
         for (int i = 0; i < Mathf.Min(bars.Count, valuesExtractors.Count); i++)
         {
             List<float> originalValues = valuesExtractors[i](this.data);
-            Debug.LogWarning($"[{dataNames[i]}] 원본 데이터: {string.Join(", ", originalValues)}");
+            //Debug.LogWarning($"[{dataNames[i]}] 원본 데이터: {string.Join(", ", originalValues)}");
+
             List<int> anomalousIndices = GetAnomalousIndices(originalValues);
-            Debug.LogWarning($"그래프 {i} ({dataNames[i]}): {anomalousIndices.Count}개 이상값 발견");
+            //Debug.LogWarning($"그래프 {i} ({dataNames[i]}): {anomalousIndices.Count}개 이상값 발견");
+
             List<float> processedValues = ProcessAnomalousValues(originalValues);
 
-            float max = Mathf.Max(this.data.warning, processedValues.Max());
+            float max;
+
+            if (i == 1) // 측정값 차트
+            {
+                // 측정값은 항상 단일트렌드처럼 +1 (정상 데이터 고려)
+                max = processedValues.Max();
+            }
+            else // AI값(0), 편차값(2)
+            {
+                // 모든 값이 0인지 확인 (모든 데이터가 이상치였던 경우)
+                bool allZero = processedValues.All(v => v == 0f);
+
+                if (allZero)
+                {
+                    // 모든 데이터가 이상치면 Y축을 가로선 개수로 고정
+                    max = 2f; // 0, 1, 2, 3
+                }
+                else
+                {
+                    // 정상 데이터가 있으면 기존 로직
+                    max = Mathf.Max(this.data.warning, processedValues.Max());
+                }
+            }
+            //float max = Mathf.Max(this.data.warning, processedValues.Max());
             var chartValues = processedValues.Select(value => value / max).ToList();
 
             bars[i].line.UpdateControlPoints(chartValues);

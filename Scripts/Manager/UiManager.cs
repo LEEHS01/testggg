@@ -146,10 +146,10 @@ public class UiManager : MonoBehaviour
 
     public void Invoke(UiEventType eventType, object payload = null)
     {
-        if (eventType == UiEventType.ChangeTrendLine)
+        /*if (eventType == UiEventType.ChangeTrendLine)
         {
             Debug.Log($"ChangeTrendLine 호출! 스택트레이스:\n{System.Environment.StackTrace}");
-        }
+        }*/
         if (eventHandlers.ContainsKey(eventType))
         {
             List<Delegate> delegates = eventHandlers[eventType]?.GetInvocationList().ToList();
