@@ -942,28 +942,15 @@ public class ModelManager : MonoBehaviour, ModelProvider
     {
         ToxinStatus highestStatus = ToxinStatus.Green;
 
-        // ★ 디버그: 전체 알람 확인
-        List<LogData> allSensorLogs = GetAlarms().Where(log =>
-            log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId).ToList();
+        // 알람 기록만 체크 (이제 활성 알람만 나올 것)
+        List<LogData> sensorLogs = GetAlarms().FindAll(log =>
+            log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId);
 
-        Debug.Log($"[DEBUG] 센서({boardId}/{hnsId}) 전체 알람: {allSensorLogs.Count}개");
-        foreach (var log in allSensorLogs)
-        {
-            Debug.Log($"  - 알람 idx={log.idx}, 해제됨={log.isCancelled}, 상태={log.status}");
-        }
-
-        // 활성화된 알람만 필터링
-        List<LogData> activeSensorLogs = allSensorLogs.Where(log => !log.isCancelled).ToList();
-
-        Debug.Log($"[DEBUG] 센서({boardId}/{hnsId}) 활성 알람: {activeSensorLogs.Count}개");
-
-        foreach (LogData log in activeSensorLogs)
-        {
-            ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
+        sensorLogs.ForEach(log => {
+            ToxinStatus logStatus = log.status != 0 ? (ToxinStatus)log.status : ToxinStatus.Purple;
             highestStatus = (ToxinStatus)Math.Max((int)highestStatus, (int)logStatus);
-        }
+        });
 
-        Debug.Log($"[DEBUG] 센서({boardId}/{hnsId}) 최종 상태: {highestStatus}");
         return highestStatus;
     }
     /*public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)

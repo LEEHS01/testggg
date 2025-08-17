@@ -17,15 +17,32 @@ public class AlarmList : MonoBehaviour
     private List<LogData> list; // 알람 데이터 목록
 
     public AlarmListItem itemPrefab;
-    public GameObject itemContainer;
+    public GameObject itemContainer;     // List_Group (Vertical Layout Group)
 
-    public List<AlarmListItem> items;
+    //public List<AlarmListItem> items;
     public TMP_Dropdown dropdownMap;
     public TMP_Dropdown dropdownStatus;
 
 
     private int areaIndex = -1; // 선택된 지역 인덱스
     private int statusIndex = -1; // 선택된 상태 인덱스
+
+    // --------- 페이징 UI 연결 ----------
+    [Header("Pagination UI")]
+    public Button btnFirst;      // <<
+    public Button btnPrev;       // <
+    public TMP_InputField inputPage; // 페이지 입력 (정수)
+    public Button btnNext;       // >
+    public Button btnLast;       // >>
+
+    [Header("Paging Settings")]
+    [Min(1)] public int pageSize = 15;  // 한 페이지 행 수
+
+    // --------- 페이징 내부 상태 ----------
+    private readonly List<AlarmListItem> _pool = new();  // 행 풀(최대 pageSize)
+    private int _currentPage = 1;                        // 1-base
+    private int TotalCount => (list == null) ? 0 : list.Count;
+    private int TotalPages => Mathf.Max(1, Mathf.CeilToInt(TotalCount / (float)pageSize));
 
     #region 버튼안씀
     private Button btnTimeAsc;
@@ -53,9 +70,93 @@ public class AlarmList : MonoBehaviour
         dropdownStatus.onValueChanged.AddListener(OnStatusFilterChanged);
         dropdownMap.onValueChanged.AddListener(OnAreaFilterChanged);
 
+        // --- 페이징 UI 이벤트 바인딩 ---
+        if (btnFirst) btnFirst.onClick.AddListener(() => GoPage(1));
+        if (btnPrev) btnPrev.onClick.AddListener(() => GoPage(_currentPage - 1));
+        if (btnNext) btnNext.onClick.AddListener(() => GoPage(_currentPage + 1));
+        if (btnLast) btnLast.onClick.AddListener(() => GoPage(TotalPages));
 
+        if (inputPage)
+        {
+            inputPage.contentType = TMP_InputField.ContentType.IntegerNumber;
+            inputPage.onEndEdit.AddListener(s =>
+            {
+                if (int.TryParse(s, out var p)) GoPage(p);
+                else SyncPageInput();
+            });
+        }
+
+        // 초기 풀 준비 (pageSize 기준)
+        EnsurePool();
     }
 
+    #region 페이징 코드 
+    // pageSize 만큼만 셀 풀을 준비 (초과분은 비활성)
+    private void EnsurePool()
+    {
+        if (itemPrefab == null || itemContainer == null) return;
+
+        while (_pool.Count < pageSize)
+        {
+            var cell = Instantiate(itemPrefab, itemContainer.transform);
+            cell.gameObject.SetActive(false);
+            _pool.Add(cell);
+        }
+        for (int i = 0; i < _pool.Count; i++)
+            _pool[i].gameObject.SetActive(i < pageSize ? false : false); // 초기에는 렌더에서 활성화
+    }
+
+    private void RenderPage()
+    {
+        // 현재 페이지 범위
+        int start = (_currentPage - 1) * pageSize;
+        int end = Mathf.Min(start + pageSize, TotalCount);
+        int count = Mathf.Max(0, end - start);
+
+        // 바인딩
+        for (int i = 0; i < pageSize; i++)
+        {
+            var cell = _pool[i];
+            if (i < count)
+            {
+                var data = list[start + i];     // NOTE: list는 기존 클래스의 List<LogData>
+                cell.gameObject.SetActive(true);
+                cell.SetText(data);             // 기존 AlarmListItem API 유지
+            }
+            else
+            {
+                cell.gameObject.SetActive(false);
+            }
+        }
+
+        // 컨테이너 높이는 페이지 크기 기준(행 높이 * 노출 행수)로 고정(선택)
+        var rt = itemContainer.GetComponent<RectTransform>();
+        if (rt != null)
+        {
+            var cellH = itemPrefab.GetComponent<RectTransform>().sizeDelta.y;
+            rt.sizeDelta = new Vector2(rt.sizeDelta.x, pageSize * cellH);
+        }
+
+        // 버튼/입력 상태 동기화
+        SyncPageInput();
+        if (btnFirst) btnFirst.interactable = _currentPage > 1;
+        if (btnPrev) btnPrev.interactable = _currentPage > 1;
+        if (btnNext) btnNext.interactable = _currentPage < TotalPages;
+        if (btnLast) btnLast.interactable = _currentPage < TotalPages;
+    }
+
+    private void GoPage(int page)
+    {
+        _currentPage = Mathf.Clamp(page, 1, TotalPages);
+        RenderPage();
+    }
+
+    private void SyncPageInput()
+    {
+        if (inputPage) inputPage.text = _currentPage.ToString();
+    }
+
+    #endregion
 
 
     // 알람 리스트 업데이트 이벤트 핸들러
@@ -85,11 +186,13 @@ public class AlarmList : MonoBehaviour
         dropdownStatus.AddOptions(statusOptions);
 
 
-        UpdateText();
+        _currentPage = 1;
+        EnsurePool();
+        RenderPage();
 
     }
 
-    private void UpdateText()
+    /*private void UpdateText()
     {
         for (int i = 0; i < this.items.Count; i++)
         {
@@ -114,7 +217,7 @@ public class AlarmList : MonoBehaviour
 
 
 
-    }
+    }*/
 
 
     private List<LogData> GetFilteredAlarms()
@@ -149,17 +252,19 @@ public class AlarmList : MonoBehaviour
     {
         this.areaIndex = areaIndex;
         list = GetFilteredAlarms(); // 필터링 반영
-        UpdateText();
+        _currentPage = 1;
+        RenderPage();
     }
 
     public void OnStatusFilterChanged(int statusIndex)
     {
         this.statusIndex = statusIndex - 1; // 0: 전체, 1~: 상태코드
         list = GetFilteredAlarms(); // 필터링 반영
-        UpdateText();
+        _currentPage = 1;
+        RenderPage();
     }
 
-    private void UpdateFilter()
+    /*private void UpdateFilter()
     {
         for (int i = 0; i < this.items.Count; i++)
         {
@@ -185,7 +290,7 @@ public class AlarmList : MonoBehaviour
                 }
             }
         }
-    }
+    }*/
 
     
 
@@ -260,8 +365,8 @@ public class AlarmList : MonoBehaviour
             Debug.Log($"{i}: {list[i].time:yyyy-MM-dd HH:mm:ss} - {list[i].hnsName}");
         }
 
-        this.UpdateText();
-        this.UpdateFilter();
+        _currentPage = 1; // 정렬 시 1페이지로 복귀(선호에 따라 유지/삭제 가능)
+        RenderPage();
     }
   
     public enum AlramOrder
