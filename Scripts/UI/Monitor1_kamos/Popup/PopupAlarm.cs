@@ -80,29 +80,33 @@ public class PopupAlarm : MonoBehaviour
 
     private void OnInitiate(object obj)
     {
-        previousLogs = new(modelProvider.GetAlarms());
+        previousLogs = new(modelProvider.GetActiveAlarms());
     }
 
     void OnChangeAlarmList(object obj)
     {
         List<LogData> rawLogDatas, newLogDatas;
 
-        Debug.Log("previousLogs : " + previousLogs.Count);
+        rawLogDatas = obj is List<LogData> alarmLogs ? alarmLogs : modelProvider.GetActiveAlarms();
 
-        //obj에서 받아 쓰는건 디버그용 코드
-        rawLogDatas = obj is List<LogData> alarmLogs ? alarmLogs : modelProvider.GetAlarms();
-        //rawLogDatas = modelProvider.GetAlarms();
+        Debug.Log($"=== PopupAlarm 디버그 ===");
+        Debug.Log($"이전 알람 개수: {previousLogs.Count}");
+        Debug.Log($"현재 알람 개수: {rawLogDatas.Count}");
 
-        //Debug.Log("rawLogDatas : " + rawLogDatas.Count);
+        // ✅ Contains 체크 로그
+        foreach (var current in rawLogDatas)
+        {
+            bool exists = previousLogs.Contains(current);
+            Debug.Log($"알람 {current.idx}({current.hnsName}): 이전에 있었나? {exists}");
+        }
+
         newLogDatas = rawLogDatas.Where(item => !previousLogs.Contains(item)).ToList();
+        Debug.Log($"신규 알람: {newLogDatas.Count}개");
 
-        //Debug.Log("newLogDatas : " + newLogDatas.Count);
+        for (int i = newLogDatas.Count - 1; i >= 0; i--)
+            if (InitAlarmLog(newLogDatas[i])) break;
 
-        //조건을 충족하는 가장 최신의 알람을 찾을 때까지 순회
-        for (int i = newLogDatas.Count - 1; i >= 0; i--) if (InitAlarmLog(newLogDatas[i])) break;
-
-        previousLogs = new (rawLogDatas);
-
+        previousLogs = new(rawLogDatas);
     }
 
     public bool InitAlarmLog(LogData data)

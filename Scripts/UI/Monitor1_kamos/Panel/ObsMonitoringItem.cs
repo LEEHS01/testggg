@@ -94,7 +94,10 @@ public class ObsMonitoringItem : MonoBehaviour
         if (toxin.values.Count == 0) return;
 
         List<float> normalizedValues = new();
-        float max = Math.Max(toxin.values.Max(), toxin.warning);
+        //float max = Math.Max(toxin.values.Max(), toxin.warning);
+
+        float max = toxin.values.Max() + 1;
+
         toxin.values.ForEach(val => normalizedValues.Add(val/max));
 
         //trdSensor.UpdateControlPoints(normalizedValues.GetRange(normalizedValues.Count * 2 / 3 - 1, normalizedValues.Count / 3));

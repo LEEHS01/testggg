@@ -154,9 +154,18 @@ public class ModelProviderTest : ModelProvider
         return GetHighjackedToxins(modelProvider.GetToxinsSetting());
     }
 
-    public List<LogData> GetAlarms()
+    /*public List<LogData> GetAlarms()
     {
         return modelProvider.GetAlarms();
+    }*/
+    public List<LogData> GetAlarmsForDisplay()
+    {
+        return modelProvider.GetAlarmsForDisplay();
+    }
+
+    public List<LogData> GetActiveAlarms()
+    {
+        return modelProvider.GetActiveAlarms();
     }
 
     public LogData GetAlarm(int alarmId)

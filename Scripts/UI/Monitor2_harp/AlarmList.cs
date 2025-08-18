@@ -8,7 +8,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-
 public class AlarmList : MonoBehaviour
 {
     ModelProvider modelProvider => UiManager.Instance.modelProvider;
@@ -19,10 +18,8 @@ public class AlarmList : MonoBehaviour
     public AlarmListItem itemPrefab;
     public GameObject itemContainer;     // List_Group (Vertical Layout Group)
 
-    //public List<AlarmListItem> items;
     public TMP_Dropdown dropdownMap;
     public TMP_Dropdown dropdownStatus;
-
 
     private int areaIndex = -1; // 선택된 지역 인덱스
     private int statusIndex = -1; // 선택된 상태 인덱스
@@ -31,15 +28,23 @@ public class AlarmList : MonoBehaviour
     [Header("Pagination UI")]
     public Button btnFirst;      // <<
     public Button btnPrev;       // <
-    public TMP_InputField inputPage; // 페이지 입력 (정수)
+    public Transform pageNumbersContainer; // 페이지 번호 버튼들이 들어갈 컨테이너
+    public Button pageNumberButtonPrefab; // 페이지 번호 버튼 프리팹
     public Button btnNext;       // >
     public Button btnLast;       // >>
 
     [Header("Paging Settings")]
     [Min(1)] public int pageSize = 15;  // 한 페이지 행 수
 
+    [Header("Page Button Colors")]
+    public Color normalPageColor = Color.white;
+    public Color selectedPageColor = Color.cyan;
+    public Color normalTextColor = Color.black;
+    public Color selectedTextColor = Color.white;
+
     // --------- 페이징 내부 상태 ----------
     private readonly List<AlarmListItem> _pool = new();  // 행 풀(최대 pageSize)
+    private readonly List<Button> _pageButtons = new();  // 페이지 번호 버튼들
     private int _currentPage = 1;                        // 1-base
     private int TotalCount => (list == null) ? 0 : list.Count;
     private int TotalPages => Mathf.Max(1, Mathf.CeilToInt(TotalCount / (float)pageSize));
@@ -59,8 +64,11 @@ public class AlarmList : MonoBehaviour
 
     void Start()
     {
-
         this.itemPrefab.gameObject.SetActive(false);
+
+        // 페이지 번호 버튼 프리팹 비활성화
+        if (pageNumberButtonPrefab != null)
+            pageNumberButtonPrefab.gameObject.SetActive(false);
 
         // 알람 리스트 변경 이벤트 구독
         UiManager.Instance.Register(UiEventType.Initiate, OnUpdateAlarmList);
@@ -75,16 +83,6 @@ public class AlarmList : MonoBehaviour
         if (btnPrev) btnPrev.onClick.AddListener(() => GoPage(_currentPage - 1));
         if (btnNext) btnNext.onClick.AddListener(() => GoPage(_currentPage + 1));
         if (btnLast) btnLast.onClick.AddListener(() => GoPage(TotalPages));
-
-        if (inputPage)
-        {
-            inputPage.contentType = TMP_InputField.ContentType.IntegerNumber;
-            inputPage.onEndEdit.AddListener(s =>
-            {
-                if (int.TryParse(s, out var p)) GoPage(p);
-                else SyncPageInput();
-            });
-        }
 
         // 초기 풀 준비 (pageSize 기준)
         EnsurePool();
@@ -137,12 +135,110 @@ public class AlarmList : MonoBehaviour
             rt.sizeDelta = new Vector2(rt.sizeDelta.x, pageSize * cellH);
         }
 
-        // 버튼/입력 상태 동기화
-        SyncPageInput();
+        UpdatePageButtons();
+
+        // 버튼 상태 동기화
         if (btnFirst) btnFirst.interactable = _currentPage > 1;
         if (btnPrev) btnPrev.interactable = _currentPage > 1;
         if (btnNext) btnNext.interactable = _currentPage < TotalPages;
         if (btnLast) btnLast.interactable = _currentPage < TotalPages;
+    }
+
+    private void UpdatePageButtons()
+    {
+        if (pageNumbersContainer == null || pageNumberButtonPrefab == null) return;
+
+        // 기존 페이지 버튼들 정리
+        foreach (var btn in _pageButtons)
+        {
+            if (btn != null) DestroyImmediate(btn.gameObject);
+        }
+        _pageButtons.Clear();
+
+        // [1] [2] [3] [...] [총페이지] 형태로 생성
+        CreateSimplePageButtons();
+    }
+
+    private void CreateSimplePageButtons()
+    {
+        // 총 페이지가 4개 이하면 모두 표시
+        if (TotalPages <= 4)
+        {
+            for (int i = 1; i <= TotalPages; i++)
+            {
+                CreatePageButton(i);
+            }
+            return;
+        }
+
+        // 4개 이상인 경우: [1] [2] [3] [...] [총페이지]
+        CreatePageButton(1);
+        CreatePageButton(2);
+        CreatePageButton(3);
+        CreateEllipsisButton();
+        CreatePageButton(TotalPages);
+    }
+
+    private void CreatePageButton(int pageNumber)
+    {
+        var btnObj = Instantiate(pageNumberButtonPrefab.gameObject, pageNumbersContainer);
+        btnObj.SetActive(true);
+
+        var btn = btnObj.GetComponent<Button>();
+        var txt = btnObj.GetComponentInChildren<TMP_Text>();
+
+        if (txt != null)
+        {
+            txt.text = pageNumber.ToString();
+        }
+
+        // 현재 페이지 스타일링
+        bool isCurrentPage = pageNumber == _currentPage;
+        var btnImage = btn.GetComponent<Image>();
+        if (btnImage != null)
+        {
+            btnImage.color = isCurrentPage ? selectedPageColor : normalPageColor;
+        }
+        if (txt != null)
+        {
+            txt.color = isCurrentPage ? selectedTextColor : normalTextColor;
+        }
+
+        // 버튼 클릭 이벤트
+        int page = pageNumber; // 클로저용 지역변수
+        btn.onClick.AddListener(() => GoPage(page));
+
+        _pageButtons.Add(btn);
+    }
+
+    private void CreateEllipsisButton()
+    {
+        var btnObj = Instantiate(pageNumberButtonPrefab.gameObject, pageNumbersContainer);
+        btnObj.SetActive(true);
+
+        var btn = btnObj.GetComponent<Button>();
+        var txt = btnObj.GetComponentInChildren<TMP_Text>();
+
+        if (txt != null)
+        {
+            txt.text = "...";
+        }
+
+        // 점점점 버튼은 클릭 불가
+        btn.interactable = false;
+        
+        // 스타일링
+        var btnImage = btn.GetComponent<Image>();
+        if (btnImage != null)
+        {
+            btnImage.color = normalPageColor;
+        }
+        if (txt != null)
+        {
+            txt.color = normalTextColor;
+        }
+
+        _pageButtons.Add(btn);
     }
 
     private void GoPage(int page)
@@ -151,18 +247,12 @@ public class AlarmList : MonoBehaviour
         RenderPage();
     }
 
-    private void SyncPageInput()
-    {
-        if (inputPage) inputPage.text = _currentPage.ToString();
-    }
-
     #endregion
-
 
     // 알람 리스트 업데이트 이벤트 핸들러
     private void OnUpdateAlarmList(object data)
     {
-        List<LogData> logs = modelProvider.GetAlarms();
+        List<LogData> logs = modelProvider.GetAlarmsForDisplay();
         list = logs;
         // 받아온 데이터의 시간 확인
         Debug.Log("=== DB에서 받아온 원본 데이터 시간 ===");
@@ -172,7 +262,6 @@ public class AlarmList : MonoBehaviour
         }
 
         this.list.Sort((a, b) => b.time.CompareTo(a.time));
-
 
         // 드롭다운에 지역명 옵션 자동 추가
         var areaNames = logs.Select(log => log.areaName).Distinct().ToList();
@@ -185,52 +274,15 @@ public class AlarmList : MonoBehaviour
         dropdownStatus.ClearOptions();
         dropdownStatus.AddOptions(statusOptions);
 
-
         _currentPage = 1;
         EnsurePool();
         RenderPage();
-
     }
-
-    /*private void UpdateText()
-    {
-        for (int i = 0; i < this.items.Count; i++)
-        {
-            AlarmListItem item = this.items[i];
-
-            if (item != itemPrefab) DestroyImmediate(this.items[i].gameObject);
-        }
-        this.items.Clear();
-
-        float height = this.list.Count * this.itemPrefab.GetComponent<RectTransform>().sizeDelta.y;
-        for (int i = 0; i < this.list.Count; i++)
-        {
-            AlarmListItem item = Instantiate(this.itemPrefab);
-            item.gameObject.SetActive(true);
-            item.transform.SetParent(this.itemContainer.transform);
-            item.SetText(this.list[i]);
-            //item.GetComponent<Button>().onClick.AddListener(() => OnAlarmSelected(item.data.idx));
-            this.items.Add(item);
-        }
-        this.itemContainer.GetComponent<RectTransform>().sizeDelta =
-            new Vector2(this.itemContainer.GetComponent<RectTransform>().sizeDelta.x, height);
-
-
-
-    }*/
-
 
     private List<LogData> GetFilteredAlarms()
     {
-        List<LogData> alarms = modelProvider.GetAlarms();
+        List<LogData> alarms = modelProvider.GetAlarmsForDisplay();
 
-        /*// 센서 사용여부 필터링 추가 (USEYN='0'인 센서의 알람 제외)
-        alarms = alarms.Where(alarm =>
-        {
-            var toxin = modelProvider.GetToxin(alarm.boardId, alarm.hnsId);
-            return toxin?.on ?? true; // 센서가 활성화된 경우만 표시
-        }).ToList();
-*/
         // 지역 필터링
         if (areaIndex > 0)
         {
@@ -246,53 +298,26 @@ public class AlarmList : MonoBehaviour
         return alarms;
     }
 
+    // 필터 적용 메서드
+    private void ApplyFilters()
+    {
+        list = GetFilteredAlarms();
+        _currentPage = 1;
+        RenderPage();
+    }
 
     // 알람 필터링 (드롭다운 메뉴에 연결)
-    public void OnAreaFilterChanged(int areaIndex)
+    public void OnAreaFilterChanged(int index)
     {
-        this.areaIndex = areaIndex;
-        list = GetFilteredAlarms(); // 필터링 반영
-        _currentPage = 1;
-        RenderPage();
+        this.areaIndex = index;
+        ApplyFilters();
     }
 
-    public void OnStatusFilterChanged(int statusIndex)
+    public void OnStatusFilterChanged(int index)
     {
-        this.statusIndex = statusIndex - 1; // 0: 전체, 1~: 상태코드
-        list = GetFilteredAlarms(); // 필터링 반영
-        _currentPage = 1;
-        RenderPage();
+        this.statusIndex = index;
+        ApplyFilters();
     }
-
-    /*private void UpdateFilter()
-    {
-        for (int i = 0; i < this.items.Count; i++)
-        {
-            AlarmListItem item = this.items[i]; // ← 정확한 타입으로 수정
-            item.gameObject.SetActive(true);
-
-            // Area Filtering
-            if (this.areaIndex > 0)
-            {
-                // Fetch the area by name from ModelProvider
-                var area = modelProvider.GetAreaByName(item.data.areaName);
-                if (area != null && area.areaId != this.areaIndex)
-                {
-                    item.gameObject.SetActive(false);
-                }
-            }
-
-            if (this.statusIndex > -1)
-            {
-                if (item.data.status != this.statusIndex)
-                {
-                    item.gameObject.SetActive(false);
-                }
-            }
-        }
-    }*/
-
-    
 
     // UI 토글 기능도 포함한 완전한 정렬 메서드
     public void OnClickTimeUp()
@@ -304,31 +329,25 @@ public class AlarmList : MonoBehaviour
         // 실제 정렬 실행
         OnClickOrder(AlramOrder.TIME_UP.ToString());
     }
+
     public void OnClickOrder(string order)
     {
-        //Debug.Log($"정렬 실행: {order}");
-
         // 정렬 전 DateTime 값들 확인
-        //Debug.Log("=== 정렬 전 시간 확인 ===");
         for (int i = 0; i < Math.Min(3, list.Count); i++)
         {
-           // Debug.Log($"{i}: {list[i].time:yyyy-MM-dd HH:mm:ss} - {list[i].hnsName}");
+            // Debug.Log($"{i}: {list[i].time:yyyy-MM-dd HH:mm:ss} - {list[i].hnsName}");
         }
 
         this.list.Sort((a, b) =>
         {
             if (order == AlramOrder.TIME_UP.ToString())
             {
-                //Debug.Log("🔵 TIME_UP 정렬 로직 실행 - 최신이 위");
-                return b.time.CompareTo(a.time);  // 변경: 최신이 위로 오도록
+                return b.time.CompareTo(a.time);  // 최신이 위로 오도록
             }
             else if (order == AlramOrder.TIME_DOWN.ToString())
             {
-                //Debug.Log("🔴 TIME_DOWN 정렬 로직 실행 - 과거가 위");
-                return a.time.CompareTo(b.time);  // 변경: 과거가 위로 오도록
+                return a.time.CompareTo(b.time);  // 과거가 위로 오도록
             }
-            // STATUS는 실제 상태값(status)으로 정렬
-            // status: 0=설비이상(가장심각), 1=경보, 2=경계(가장낮음)
             else if (order == AlramOrder.STATUS_UP.ToString())
             {
                 return a.status.CompareTo(b.status);  // 심각한 순서: 설비이상→경보→경계 (0→1→2)
@@ -337,7 +356,6 @@ public class AlarmList : MonoBehaviour
             {
                 return b.status.CompareTo(a.status);  // 낮은 순서: 경계→경보→설비이상 (2→1→0)
             }
-            // MAP은 지역명(areaName)으로 정렬
             else if (order == AlramOrder.MAP_UP.ToString())
             {
                 return b.areaName.CompareTo(a.areaName);  // Z→A 순서
@@ -346,7 +364,6 @@ public class AlarmList : MonoBehaviour
             {
                 return a.areaName.CompareTo(b.areaName);  // A→Z 순서
             }
-            // AREA는 관측소명(obsName)으로 정렬
             else if (order == AlramOrder.AREA_UP.ToString())
             {
                 return b.obsName.CompareTo(a.obsName);   // Z→A 순서
@@ -365,10 +382,10 @@ public class AlarmList : MonoBehaviour
             Debug.Log($"{i}: {list[i].time:yyyy-MM-dd HH:mm:ss} - {list[i].hnsName}");
         }
 
-        _currentPage = 1; // 정렬 시 1페이지로 복귀(선호에 따라 유지/삭제 가능)
+        _currentPage = 1; // 정렬 시 1페이지로 복귀
         RenderPage();
     }
-  
+
     public enum AlramOrder
     {
         TIME_UP,
@@ -382,6 +399,4 @@ public class AlarmList : MonoBehaviour
         VALUE_UP,
         VALUE_DOWN
     };
-
 }
-

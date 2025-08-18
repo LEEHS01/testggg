@@ -61,7 +61,9 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     this.alarmYearly.Add((GetAreaByName(model.areanm).areaId, new(0, model.ala1, model.ala2, model.ala0))));
             });
         });
-        dbManager.GetAlarmLogsActivated(logs => logs.ForEach(log => this.logDataList.Add(log)));
+        dbManager.GetCurrentAlarms(logs => logs.ForEach(log => this.currentAlarms.Add(log)));
+        dbManager.GetHistoricalAlarms(logs => logs.ForEach(log => this.historicalAlarms.Add(log)));
+
 
 
         //Register Events
@@ -149,7 +151,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     //List<float> seps = new();
     DateTime pastTimestamp = DateTime.Now;
-    void GetAlarmChangedProcess()
+    /*void GetAlarmChangedProcess()
     {
         DateTime newTimestamp = DateTime.Now;
         //DateTime TEST_DT;
@@ -158,12 +160,10 @@ public class ModelManager : MonoBehaviour, ModelProvider
         //TEST_DT = DateTime.Now;
         dbManager.GetAlarmLogsChangedInRange(pastTimestamp, newTimestamp, changedList =>
         {
-            //Debug.Log("CHECKTIME Request end :" + DateTime.Now.ToString("ss.fff"));
             //seps.Add((float)(DateTime.Now - TEST_DT).TotalSeconds);
-            //Debug.Log("CHECKTIME Average :" + seps.Average());
             //float variance = seps.Select(v => (v - seps.Average()) * (v - seps.Average())).Average();
             //float stdDev = (float)Math.Sqrt(variance);
-            //Debug.Log("CHECKTIME stdDev :" + stdDev);
+
             changedList = changedList.OrderBy(x => x.alacode).ToList();
 
             //변경사항들을 신규 알람과 해제된 알람으로 구분
@@ -176,8 +176,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
             logDataList.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
 
             //해제된 알람의 idx를 가진 로그데이터들을 제거->>> 해제된 알람 유지를 위한 주석처리
-            /*IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
-            logDataList.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));*/
+            *//*IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
+            logDataList.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));*//*
 
             DateTime oneWeekAgo = DateTime.Now.AddDays(-7);
             int removedOldCount = logDataList.RemoveAll(logData => logData.time < oneWeekAgo);
@@ -198,6 +198,91 @@ public class ModelManager : MonoBehaviour, ModelProvider
             {
                 Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 없습니다.\n" +
                     $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
+            }
+        });
+
+        DOVirtual.DelayedCall(6, GetAlarmChangedProcess);
+    }*/
+    void GetAlarmChangedProcess()
+    {
+        DateTime newTimestamp = DateTime.Now;
+
+        dbManager.GetAlarmLogsChangedInRange(pastTimestamp, newTimestamp, changedList =>
+        {
+            changedList = changedList.OrderBy(x => x.alacode).ToList();
+
+            // 신규/해제 알람 구분
+            List<AlarmLogModel> toAddModels = changedList.Where(changed =>
+                Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
+
+            List<AlarmLogModel> toRemoveModels = changedList.Where(changed =>
+                changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
+
+            // currentAlarms 업데이트 (활성 알람만)
+            currentAlarms.AddRange(toAddModels.Where(model => string.IsNullOrEmpty(model.turnoff_flag))
+                .Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
+
+            IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
+            currentAlarms.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));
+
+            // historicalAlarms 업데이트 (모든 알람)
+            historicalAlarms.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
+
+            DateTime oneWeekAgo = DateTime.Now.AddDays(-7);
+            int removedOldCount = historicalAlarms.RemoveAll(logData => logData.time < oneWeekAgo);
+
+            pastTimestamp = newTimestamp;
+
+            // ✅ 알람 변화와 상관없이 매번 센서값과 상태 업데이트
+            if (currentObsId > 0)
+            {
+                dbManager.GetToxinValueLast(currentObsId, currents =>
+                {
+                    Debug.Log($"6초마다 센서값/상태 업데이트");
+
+                    // 센서값 업데이트
+                    toxins.ForEach(toxin =>
+                    {
+                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                        if (curr != null) toxin.UpdateValue(curr);
+                    });
+
+                    // 상태 초기화
+                    toxins.ForEach(t => t.status = ToxinStatus.Green);
+
+                    // 임계값 기반 상태 계산
+                    toxins.ForEach(toxin =>
+                    {
+                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                        if (curr != null && curr.val.HasValue)
+                        {
+                            if (curr.val >= curr.hihi)
+                                toxin.status = ToxinStatus.Red;
+                            else if (curr.val >= curr.hi)
+                                toxin.status = ToxinStatus.Yellow;
+                        }
+                    });
+
+                    // 활성 알람 기반 상태 보정
+                    currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log => {
+                        ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
+                        ToxinData toxin = toxins.Find(t => t.boardid == log.boardId && (logStatus == ToxinStatus.Purple || t.hnsid == log.hnsId));
+                        if (toxin != null)
+                        {
+                            toxin.status = (ToxinStatus)Math.Max((int)logStatus, (int)toxin.status);
+                        }
+                    });
+
+                    uiManager.Invoke(UiEventType.ChangeTrendLine);
+                    uiManager.Invoke(UiEventType.ChangeSensorStatus);
+                });
+            }
+
+            // 알람 변화가 있을 때만 알람 관련 이벤트
+            if (changedList.Count != 0)
+            {
+                Debug.Log($"알람 변화 발생: 신규 {toAddModels.Count}, 해제 {toRemoveModels.Count}");
+                uiManager.Invoke(UiEventType.ChangeAlarmList);
             }
         });
 
@@ -414,10 +499,10 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     model.dateTimes = dateTimes; 
                 });
                 //Debug.LogError($"[5단계] Values 설정 완료");
-                var alarmCount = logDataList.Where(t => t.obsId == obsId).Count();
+                var alarmCount = currentAlarms.Where(t => t.obsId == obsId).Count();
                 try
                 {
-                    logDataList.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
+                    currentAlarms.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
                     {
                         //Debug.LogError($"[6-1] 알람 처리 중: status={ala.status}, boardId={ala.boardId}, hnsId={ala.hnsId}");
 
@@ -529,7 +614,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
         Debug.Log($"OnSelectAlarm 호출됨: alarmId={alarmId}");
 
-        LogData log = logDataList.Find(logData => logData.idx == alarmId);
+        LogData log = historicalAlarms.Find(logData => logData.idx == alarmId);
 
         if (log == null) throw new Exception($"ModelManager - OnSelectAlarm : 해당 로그의 정보를 찾지 못했습니다. alarm.idx : ({alarmId})");
 
@@ -553,19 +638,12 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
                 foreach (var boardGroup in boardGroups)
                 {
-                    //Debug.Log($"\n--- Board {boardGroup.Key} ---");
-                    //Debug.Log($"데이터 개수: {boardGroup.Count()}");
-
                     // 각 보드 내에서 HNS별 그룹화
                     var hnsGroups = boardGroup.GroupBy(d => d.hnsidx).ToList();
-                    //Debug.Log($"HNS 종류 개수: {hnsGroups.Count}");
 
                     foreach (var hnsGroup in hnsGroups)
                     {
                         var firstData = hnsGroup.First();
-                        //Debug.Log($"  HNS {hnsGroup.Key}: {hnsGroup.Count()}개 데이터");
-                        //Debug.Log($"    샘플 값: val={firstData.val}, aival={firstData.aival}");
-                        //Debug.Log($"    시간 범위: {hnsGroup.Min(d => d.obsdt)} ~ {hnsGroup.Max(d => d.obsdt)}");
                     }
                 }
                 int countExpected = Mathf.FloorToInt((Option.TREND_DURATION_LOG * 60f) / Option.TREND_TIME_INTERVAL);
@@ -603,11 +681,18 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     }
                 });
 
+                var alarmSensor = toxins.FirstOrDefault(t =>
+                t.boardid == log.boardId && t.hnsid == log.hnsId);
+
+                if (alarmSensor != null && alarmSensor.values.Count > 0 && log.value.HasValue)
+                {
+                    alarmSensor.values[alarmSensor.values.Count - 1] = log.value.Value;
+                }
                 try
                 {
                     Debug.LogError($"OnSelectAlarm - 알람 상태 반영 시작");
 
-                    logDataList.Where(t => t.obsId == log.obsId).ToList().ForEach(ala =>
+                    currentAlarms.Where(t => t.obsId == log.obsId).ToList().ForEach(ala =>
                     {
                         //Debug.LogError($"OnSelectAlarm - 알람 처리: status={ala.status}, boardId={ala.boardId}, hnsId={ala.hnsId}");
 
@@ -712,6 +797,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
         // *** 핵심: 알람 변경 시 즉시 최신 센서값 가져오기 ***
         dbManager.GetToxinValueLast(currentObsId, currents =>
         {
+            var c = currents.FirstOrDefault(x => x.boardidx == 3 && x.hnsidx == 1);
+            Debug.Log($"[CURRENT] obs=1, board=3, hns=1 val={c?.val}");
             // 1. 센서 상태 초기화
             toxins.ForEach(t => t.status = ToxinStatus.Green);
 
@@ -727,13 +814,13 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             // 3. 알람 상태 반영
             //수정전
-            //List<LogData> logsInCurrentObs = logDataList.Where(log => log.obsId == currentObsId).ToList();
+            List<LogData> logsInCurrentObs = currentAlarms.Where(log => log.obsId == currentObsId).ToList();
 
             // 수정 후 - 활성 알람만 필터링
-            List<LogData> logsInCurrentObs = logDataList.Where(log =>
+            /*List<LogData> logsInCurrentObs = logDataList.Where(log =>
                 log.obsId == currentObsId &&
                 !log.isCancelled  // 해제되지 않은 알람만
-            ).ToList();
+            ).ToList();*/
             logsInCurrentObs.ForEach(log => {
                 ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
                 ToxinData toxin = toxins.Find(t => t.boardid == log.boardId && (logStatus == ToxinStatus.Purple || t.hnsid == log.hnsId));
@@ -834,7 +921,9 @@ public class ModelManager : MonoBehaviour, ModelProvider
     List<ToxinData> toxins = new();
     List<ToxinData> logToxins = new();
     List<ToxinData> settingToxins = new();
-    List<LogData> logDataList = new();
+    //List<LogData> logDataList = new(); //삭제프로시저 변경
+    List<LogData> currentAlarms = new();     // 활성 알람만 (상태 계산용)
+    List<LogData> historicalAlarms = new();  // 7일치 모든 알람 (UI 표시용)
     List<AreaData> areas = new();
 
     List<AlarmSummaryModel> alarmSummarys = new();
@@ -855,7 +944,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
         ToxinStatus status = ToxinStatus.Green;
 
         //해당 관측소의 로그를 모두 가져옴
-        List<LogData> obsLogs = logDataList.FindAll(log => log.obsId == obsId);
+        List<LogData> obsLogs = currentAlarms.FindAll(log => log.obsId == obsId);
         List<ToxinStatus> transitionCondition;
 
         //로그를 순회하며 가장 높은 경고 단계를 탐색
@@ -911,9 +1000,15 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     public List<ToxinData> GetToxinsInLog() => logToxins;
     public List<ToxinData> GetToxinsSetting() => settingToxins;
-    public List<LogData> GetAlarms() => logDataList;
 
-    public LogData GetAlarm(int alarmId) => logDataList.Find(log => log.idx == alarmId);
+    public List<LogData> GetAlarmsForDisplay() => historicalAlarms;  // UI용
+    public List<LogData> GetActiveAlarms() => currentAlarms;        // 상태 계산용
+
+    public LogData GetAlarm(int alarmId) => historicalAlarms.Find(log => log.idx == alarmId); // UI에서 사용
+
+    //public List<LogData> GetAlarms() => logDataList;
+
+    //public LogData GetAlarm(int alarmId) => logDataList.Find(log => log.idx == alarmId);
 
     public List<(int areaId, int count)> GetAlarmMonthly() => alarmMonthly;
 
@@ -970,11 +1065,10 @@ public class ModelManager : MonoBehaviour, ModelProvider
         // 해제된 알람 출력 하면서 -> 기존에 모든 알람으로 하다보니 모니터A상태값이 해제된알람의 상태값으로 표현되는 문제
         //List<LogData> sensorLogs = GetAlarms().FindAll(log => log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId);
 
-        List<LogData> sensorLogs = GetAlarms().FindAll(log =>
+        List<LogData> sensorLogs = currentAlarms.FindAll(log =>
         log.hnsId == hnsId &&
         log.obsId == obsId &&
-        log.boardId == boardId &&
-        !log.isCancelled
+        log.boardId == boardId
     );
 
         sensorLogs.ForEach(log =>

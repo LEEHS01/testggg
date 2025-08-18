@@ -171,8 +171,95 @@ internal class PopupDetailToxin : MonoBehaviour
 
         return anomalousIndices;
     }
+    // PopupDetailToxin.cs의 UpdateChart() 메서드 수정
+    // AI값과 측정값이 동일한 y축 스케일을 사용하도록 변경
 
-    private void UpdateChart() // IEnumerator 제거
+    private void UpdateChart()
+    {
+        DateTime endTime = modelProvider.GetCurrentChartEndTime();
+        Debug.LogWarning("차트 업데이트 시작");
+
+        // 그래프 데이터 추출기 정의 (aiValues, values, diffValues)
+        List<Func<ToxinData, List<float>>> valuesExtractors = new()
+    {
+        toxinData => toxinData.aiValues,
+        toxinData => toxinData.values,
+        toxinData => toxinData.diffValues,
+    };
+        string[] dataNames = { "AI값", "측정값", "편차값" };
+
+        if (bars.Count != valuesExtractors.Count)
+        {
+            Debug.LogWarning($"bars.Count({bars.Count})와 valuesExtractors.Count({valuesExtractors.Count})가 일치하지 않음");
+            return;
+        }
+
+        // 1단계: 모든 데이터 전처리하여 공통 max 값 계산
+        List<List<float>> allProcessedValues = new List<List<float>>();
+        List<List<int>> allAnomalousIndices = new List<List<int>>();
+
+        for (int i = 0; i < valuesExtractors.Count; i++)
+        {
+            List<float> originalValues = valuesExtractors[i](this.data);
+            List<int> anomalousIndices = GetAnomalousIndices(originalValues);
+            List<float> processedValues = ProcessAnomalousValues(originalValues);
+
+            allProcessedValues.Add(processedValues);
+            allAnomalousIndices.Add(anomalousIndices);
+        }
+
+        // 2단계: 공통 max 값 계산
+        float commonMaxForAiAndMeasured = 0f;
+
+        // 측정값의 최댓값을 AI값에도 동일하게 적용
+        if (allProcessedValues.Count >= 2)
+        {
+            float measuredMax = allProcessedValues[1].Max(); // 측정값의 최댓값
+            commonMaxForAiAndMeasured = measuredMax; // AI값도 측정값과 동일한 스케일 사용
+        }
+
+        // 3단계: 각 차트별로 적절한 max 값 적용
+        for (int i = 0; i < Mathf.Min(bars.Count, valuesExtractors.Count); i++)
+        {
+            List<float> processedValues = allProcessedValues[i];
+            List<int> anomalousIndices = allAnomalousIndices[i];
+
+            float max;
+
+            if (i == 0 || i == 1) // AI값(0), 측정값(1) - 동일한 스케일 사용
+            {
+                max = commonMaxForAiAndMeasured;
+            }
+            else // 편차값(2) - 기존 로직 유지
+            {
+                bool allZero = processedValues.All(v => v == 0f);
+                if (allZero)
+                {
+                    max = 2f; // 0, 1, 2, 3
+                }
+                else
+                {
+                    max = Mathf.Max(this.data.warning, processedValues.Max());
+                }
+            }
+
+            var chartValues = processedValues.Select(value => value / max).ToList();
+
+            bars[i].line.UpdateControlPoints(chartValues);
+            bars[i].CreatAxis(endTime, max);
+            bars[i].SetNormalizedValues(chartValues);
+
+            // 차트 포인트 찾기 - 대기 없이 바로 실행
+            EnsureChartPointsReady(bars[i]);
+
+            // 이상값 위치를 빨간색으로 표시
+            bars[i].HighlightAnomalousPoints(anomalousIndices);
+            Debug.LogWarning($"그래프 {i} ({dataNames[i]}) 완료: max={max}, {anomalousIndices.Count}개 빨간점");
+        }
+
+        Debug.Log("모든 차트 업데이트 완료");
+    }
+    /*private void UpdateChart() // IEnumerator 제거
     {
         // yield return null; 제거
         // yield return new WaitForSeconds(0.1f); 제거
@@ -244,7 +331,7 @@ internal class PopupDetailToxin : MonoBehaviour
         }
 
         Debug.Log("모든 차트 업데이트 완료");
-    }
+    }*/
 
     private void EnsureChartPointsReady(ChartBar bar)
     {

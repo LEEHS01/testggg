@@ -122,8 +122,10 @@ public class DbManager : MonoBehaviour
     /// 현재 활성화된 알람들을 가져옵니다.
     /// </summary>
     /// <param name="callback"></param>
-    public void GetAlarmLogsActivated(Action<List<LogData>> callback)
-        => StartCoroutine(GetAlarmLogsActivatedFunc(callback));
+    public void GetHistoricalAlarms(Action<List<LogData>> callback)
+    => StartCoroutine(GetHistoricalAlarmsFunc(callback));
+    /* public void GetAlarmLogsActivated(Action<List<LogData>> callback)
+        => StartCoroutine(GetAlarmLogsActivatedFunc(callback));*/
     /// <summary>
     /// 월간 알람 정보를 가져옵니다.
     /// </summary>
@@ -227,6 +229,8 @@ public class DbManager : MonoBehaviour
         => StartCoroutine(GetSensorUsingFunc(obsId, boardId, sensorId, callback));
     public void SetObsCctv(int obsId, CctvType cctvType, string url, Action callback)
         => StartCoroutine(SetObsCctvFunc(obsId, cctvType, url, callback));
+    public void GetCurrentAlarms(Action<List<LogData>> callback)
+    => StartCoroutine(GetCurrentAlarmsFunc(callback));
     #endregion
 
     #region [내부 열거자 함수]
@@ -244,7 +248,7 @@ public class DbManager : MonoBehaviour
         #endregion
 
     }
-    IEnumerator GetAlarmLogsActivatedFunc(Action<List<LogData>> callback)
+    /*IEnumerator GetAlarmLogsActivatedFunc(Action<List<LogData>> callback)
     {
         List<LogData> alarmLogs = new();
 
@@ -259,7 +263,7 @@ public class DbManager : MonoBehaviour
         #endregion
 
         callback(alarmLogs);
-    }
+    }*/
     IEnumerator GetAlarmMonthlyFunc(Action<List<AlarmMontlyModel>> callback)
     {
         //List<AlarmMontlyModel> alarmList = new();
@@ -540,6 +544,36 @@ public class DbManager : MonoBehaviour
             Debug.Log("API UPDATE OBS_CCTV Response: " + response);
             callback();
         }));
+    }
+
+    IEnumerator GetCurrentAlarmsFunc(Action<List<LogData>> callback)
+    {
+        List<LogData> alarmLogs = new();
+
+        var query = "EXEC GET_CURRENT_ALARM_LOG;";  // ⭐ 새 프로시저 사용
+        yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
+        {
+            Debug.Log("API Current Alarm Response: " + response);
+            var entity = JsonConvert.DeserializeObject<List<AlarmLogModel>>(response);
+            entity.ForEach(item => alarmLogs.Add(LogData.FromAlarmLogModel(item)));
+        }));
+
+        callback(alarmLogs);
+    }
+
+    IEnumerator GetHistoricalAlarmsFunc(Action<List<LogData>> callback)
+    {
+        List<LogData> alarmLogs = new();
+
+        var query = "EXEC GET_HISTORICAL_ALARM_LOG;";  // ⭐ 기존 프로시저 사용
+        yield return StartCoroutine(ResponseAPIString(QueryType.SELECT.ToString(), query, (response) =>
+        {
+            Debug.Log("API Historical Alarm Response: " + response);
+            var entity = JsonConvert.DeserializeObject<List<AlarmLogModel>>(response);
+            entity.ForEach(item => alarmLogs.Add(LogData.FromAlarmLogModel(item)));
+        }));
+
+        callback(alarmLogs);
     }
     #endregion
 

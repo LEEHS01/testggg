@@ -24,7 +24,9 @@ public interface ModelProvider
     public List<ToxinData> GetToxinsInLog();
     public List<ToxinData> GetToxinsSetting();
 
-    public List<LogData> GetAlarms();
+    /*public List<LogData> GetAlarms();*/
+    public List<LogData> GetAlarmsForDisplay();  // UI용
+    public List<LogData> GetActiveAlarms();      // 상태 계산용
     public LogData GetAlarm(int alarmId);
 
     public List<(int areaId, int count)> GetAlarmMonthly();
