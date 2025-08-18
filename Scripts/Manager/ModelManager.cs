@@ -726,7 +726,14 @@ public class ModelManager : MonoBehaviour, ModelProvider
             });
 
             // 3. 알람 상태 반영
-            List<LogData> logsInCurrentObs = logDataList.Where(log => log.obsId == currentObsId).ToList();
+            //수정전
+            //List<LogData> logsInCurrentObs = logDataList.Where(log => log.obsId == currentObsId).ToList();
+
+            // 수정 후 - 활성 알람만 필터링
+            List<LogData> logsInCurrentObs = logDataList.Where(log =>
+                log.obsId == currentObsId &&
+                !log.isCancelled  // 해제되지 않은 알람만
+            ).ToList();
             logsInCurrentObs.ForEach(log => {
                 ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
                 ToxinData toxin = toxins.Find(t => t.boardid == log.boardId && (logStatus == ToxinStatus.Purple || t.hnsid == log.hnsId));
@@ -938,7 +945,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     public AreaData GetAreaByName(string areaName) => areas.Find(area => area.areaName == areaName);
 
-    public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
+    /*public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
     {
         ToxinStatus highestStatus = ToxinStatus.Green;
 
@@ -952,8 +959,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
         });
 
         return highestStatus;
-    }
-    /*public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
+    }*/
+    public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
     {
         ToxinStatus highestStatus = ToxinStatus.Green;
 
@@ -967,18 +974,19 @@ public class ModelManager : MonoBehaviour, ModelProvider
         log.hnsId == hnsId &&
         log.obsId == obsId &&
         log.boardId == boardId &&
-        log.isCancelled
+        !log.isCancelled
     );
 
-        sensorLogs.ForEach(log => {
+        sensorLogs.ForEach(log =>
+        {
 
             ToxinStatus logStatus = log.status != 0 ? (ToxinStatus)log.status : ToxinStatus.Purple;
 
             highestStatus = (ToxinStatus)Math.Max((int)highestStatus, (int)logStatus);
-            }
+        }
         );
         return highestStatus;
-    }*/
+    }
 
     public DateTime GetCurrentChartEndTime()
     {
