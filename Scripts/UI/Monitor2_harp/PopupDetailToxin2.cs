@@ -48,7 +48,9 @@ internal class PopupDetailToxin2 : MonoBehaviour
         txtCurrent.text = Math.Round(toxin.GetLastValue(), 2).ToString();
         txtTotal.text = Math.Round(this.data.warning, 2).ToString();
 
-        var max = Mathf.Max(this.data.warning, this.data.values.Max());
+        //var max = Mathf.Max(this.data.warning, this.data.values.Max());
+        var max = this.data.values.Max();
+
         var lcahrt = this.data.values.Select(t => t / max).ToList();
         line.UpdateControlPoints(lcahrt);
 
@@ -71,13 +73,15 @@ internal class PopupDetailToxin2 : MonoBehaviour
     // 시간 축 설정
     private void SetMins(DateTime dt)
     {
-        DateTime startDt = dt.AddHours(-4);
-        var interval = (dt - startDt).TotalMinutes / hours.Count;
+        DateTime startDt = dt.AddHours(-12);
 
-        for (int i = 0; i < hours.Count; i++)
+        // PopupDetailToxin의 ChartBar.cs와 동일한 공식 사용
+        var turm = (dt - startDt).TotalMinutes / (this.hours.Count - 1);
+
+        for (int i = 0; i < this.hours.Count; i++)
         {
-            var t = dt.AddMinutes(-(interval * i));
-            hours[i].text = t.ToString("HH:mm");
+            var t = dt.AddMinutes(-(turm * i));
+            this.hours[i].text = t.ToString("HH:mm");
         }
     }
 
