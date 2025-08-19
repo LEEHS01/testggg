@@ -193,10 +193,10 @@ public class ModelProviderTest : ModelProvider
         return modelProvider.GetObsStatusCountByAreaId(areaId);
     }
 
-    public ToxinStatus GetSensorStatus(int obsId, int boardId, int sensorId)
+   /* public ToxinStatus GetSensorStatus(int obsId, int boardId, int sensorId)
     {
         return modelProvider.GetSensorStatus(obsId, boardId, sensorId);
-    }
+    }*/
     public DateTime GetCurrentChartEndTime()
     {
         return modelProvider.GetCurrentChartEndTime();

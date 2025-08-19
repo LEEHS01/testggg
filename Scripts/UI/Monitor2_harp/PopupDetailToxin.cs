@@ -215,7 +215,19 @@ internal class PopupDetailToxin : MonoBehaviour
         if (allProcessedValues.Count >= 2)
         {
             float measuredMax = allProcessedValues[1].Max(); // 측정값의 최댓값
-            commonMaxForAiAndMeasured = measuredMax; // AI값도 측정값과 동일한 스케일 사용
+
+            // ⭐ 이 부분만 추가하면 됨!
+            if (measuredMax <= 0)
+            {
+                measuredMax = 100f; // 독성도 기본값
+            }
+
+            commonMaxForAiAndMeasured = measuredMax;
+        }
+
+        if (commonMaxForAiAndMeasured <= 0)
+        {
+            commonMaxForAiAndMeasured = 2f;
         }
 
         // 3단계: 각 차트별로 적절한 max 값 적용

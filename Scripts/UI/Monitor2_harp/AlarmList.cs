@@ -155,14 +155,17 @@ public class AlarmList : MonoBehaviour
         }
         _pageButtons.Clear();
 
-        // [1] [2] [3] [...] [총페이지] 형태로 생성
-        CreateSimplePageButtons();
+        // 동적 페이징 버튼 생성
+        CreateDynamicPageButtons();
     }
 
-    private void CreateSimplePageButtons()
+
+    private void CreateDynamicPageButtons()
     {
-        // 총 페이지가 4개 이하면 모두 표시
-        if (TotalPages <= 4)
+        int maxVisibleButtons = 7; // 최대 표시할 버튼 수 (... 포함)
+
+        // 총 페이지가 maxVisibleButtons 이하면 모두 표시
+        if (TotalPages <= maxVisibleButtons)
         {
             for (int i = 1; i <= TotalPages; i++)
             {
@@ -171,12 +174,71 @@ public class AlarmList : MonoBehaviour
             return;
         }
 
-        // 4개 이상인 경우: [1] [2] [3] [...] [총페이지]
-        CreatePageButton(1);
-        CreatePageButton(2);
-        CreatePageButton(3);
-        CreateEllipsisButton();
-        CreatePageButton(TotalPages);
+        // 동적 페이징 로직
+        List<int> pagesToShow = new List<int>();
+
+        // 항상 1페이지는 표시
+        pagesToShow.Add(1);
+
+        // 현재 페이지 근처 표시 로직
+        if (_currentPage <= 4)
+        {
+            // 시작 부분: [1] [2] [3] [4] [5] [...] [마지막]
+            for (int i = 2; i <= 5; i++)
+            {
+                if (i < TotalPages) pagesToShow.Add(i);
+            }
+
+            // ... 추가
+            pagesToShow.Add(-1); // -1은 ... 표시용
+
+            // 마지막 페이지
+            pagesToShow.Add(TotalPages);
+        }
+        else if (_currentPage >= TotalPages - 3)
+        {
+            // 끝 부분: [1] [...] [끝-4] [끝-3] [끝-2] [끝-1] [끝]
+
+            // ... 추가
+            pagesToShow.Add(-1);
+
+            for (int i = TotalPages - 4; i <= TotalPages; i++)
+            {
+                if (i > 1) pagesToShow.Add(i);
+            }
+        }
+        else
+        {
+            // 중간 부분: [1] [...] [현재-1] [현재] [현재+1] [...] [마지막]
+
+            // 첫 번째 ...
+            pagesToShow.Add(-1);
+
+            // 현재 페이지 주변
+            for (int i = _currentPage - 1; i <= _currentPage + 1; i++)
+            {
+                pagesToShow.Add(i);
+            }
+
+            // 두 번째 ...
+            pagesToShow.Add(-1);
+
+            // 마지막 페이지
+            pagesToShow.Add(TotalPages);
+        }
+
+        // 버튼 생성
+        foreach (int pageNum in pagesToShow)
+        {
+            if (pageNum == -1)
+            {
+                CreateEllipsisButton();
+            }
+            else
+            {
+                CreatePageButton(pageNum);
+            }
+        }
     }
 
     private void CreatePageButton(int pageNumber)
