@@ -261,6 +261,11 @@ public class ModelManager : MonoBehaviour, ModelProvider
                             else if (curr.val >= curr.hi)
                                 toxin.status = ToxinStatus.Yellow;
                         }
+                        // Temperature 디버그
+                        if (toxin.hnsName.Contains("Temperature"))
+                        {
+                            Debug.Log($"Temperature 상태: {curr.val} → {toxin.status} (hi={curr.hi}, hihi={curr.hihi})");
+                        }
                     });
 
                     // 활성 알람 기반 상태 보정
@@ -272,8 +277,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
                             toxin.status = (ToxinStatus)Math.Max((int)logStatus, (int)toxin.status);
                         }
                     });
-
-                    uiManager.Invoke(UiEventType.ChangeTrendLine);
+                    uiManager.Invoke(UiEventType.ChangeSensorValues);   // ObsMonitoring 센서값만
+                    //uiManager.Invoke(UiEventType.ChangeTrendLine);
                     uiManager.Invoke(UiEventType.ChangeSensorStatus);
                 });
             }
@@ -688,44 +693,83 @@ public class ModelManager : MonoBehaviour, ModelProvider
                 {
                     alarmSensor.values[alarmSensor.values.Count - 1] = log.value.Value;
                 }
-                try
+                // 상태 초기화
+                toxins.ForEach(t => t.status = ToxinStatus.Green);
+
+                // 모든 센서의 마지막 값으로 임계값 기반 상태 계산
+                toxins.ForEach(toxin =>
+                {
+                    if (toxin.values.Count > 0)
+                    {
+                        float lastValue = toxin.GetLastValue();
+
+                        // ToxinData의 올바른 임계값 필드 사용
+                        if (lastValue >= toxin.warning)  // 경보 임계값
+                            toxin.status = ToxinStatus.Red;
+                        else if (lastValue >= toxin.serious) // 경계 임계값
+                            toxin.status = ToxinStatus.Yellow;
+
+                    }
+
+                });
+
+                /*try
                 {
                     Debug.LogError($"OnSelectAlarm - 알람 상태 반영 시작");
 
                     currentAlarms.Where(t => t.obsId == log.obsId).ToList().ForEach(ala =>
                     {
-                        //Debug.LogError($"OnSelectAlarm - 알람 처리: status={ala.status}, boardId={ala.boardId}, hnsId={ala.hnsId}");
+                        if (ala.hnsName.Contains("Temperature"))
+                        {
+                            Debug.Log($"Temperature 처리 중: ala.status={ala.status}");
+                        }
 
                         if (ala.status == 0)
                         {
-                            var targetToxins = toxins.Where(t => t.boardid == ala.boardId && t.status != ToxinStatus.Red).ToList();
-                            //Debug.LogError($"OnSelectAlarm - 설비이상 대상: {targetToxins.Count}개");
-                            targetToxins.ForEach(t => {
-                                if (t != null) t.status = ToxinStatus.Yellow;
-                            });
+                            // 설비이상 처리
                         }
                         else
                         {
                             var targetToxin = toxins.FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId);
                             if (targetToxin != null)
                             {
-                                //Debug.LogError($"OnSelectAlarm - 센서 알람 설정: Board{ala.boardId}, HNS{ala.hnsId}");
-                                targetToxin.status = ToxinStatus.Red;
-                            }
-                            else
-                            {
-                                //Debug.LogError($"OnSelectAlarm - 센서 찾기 실패: Board{ala.boardId}, HNS{ala.hnsId}");
+                                if (ala.hnsName.Contains("Temperature"))
+                                {
+                                    Debug.Log($"Temperature switch 전 상태: {targetToxin.status}");
+                                    Debug.Log($"Temperature ala.status: {ala.status}");
+                                }
+
+                                switch (ala.status)
+                                {
+                                    case 1: // 경계
+                                        targetToxin.status = ToxinStatus.Yellow;
+                                        if (ala.hnsName.Contains("Temperature"))
+                                            Debug.Log($"Temperature case 1: Yellow 설정됨");
+                                        break;
+                                    case 2: // 경보
+                                        targetToxin.status = ToxinStatus.Red;
+                                        if (ala.hnsName.Contains("Temperature"))
+                                            Debug.Log($"Temperature case 2: Red 설정됨");
+                                        break;
+                                    default:
+                                        if (ala.hnsName.Contains("Temperature"))
+                                            Debug.Log($"Temperature default case: ala.status={ala.status}");
+                                        break;
+                                }
+
+                                if (ala.hnsName.Contains("Temperature"))
+                                {
+                                    Debug.Log($"Temperature switch 후 상태: {targetToxin.status}");
+                                }
                             }
                         }
                     });
-
-                   // Debug.LogError($"OnSelectAlarm - 알람 상태 반영 완료");
                 }
                 catch (Exception ex)
                 {
                     Debug.LogError($"❌ OnSelectAlarm - 알람 상태 반영 실패: {ex.Message}");
                 }
-
+*/
                 currentObsId = log.obsId;
 
                 this.logToxins.Clear();

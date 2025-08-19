@@ -26,6 +26,7 @@ internal class ToxinList3 : MonoBehaviour
         UiManager.Instance.Register(UiEventType.NavigateObs, OnNavigateObs);
         UiManager.Instance.Register(UiEventType.ChangeSensorList, OnLoadSetting);
         UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnLoadRecentMeasure);
+        UiManager.Instance.Register(UiEventType.ChangeSensorStatus, OnLoadRecentMeasure);
         UiManager.Instance.Register(UiEventType.CommitSensorUsing, OnCommitSensorUsing);
 
         Transform scrollContent = transform.Find("Content");

@@ -49,6 +49,7 @@ public class ObsMonitoring : MonoBehaviour
 
         UiManager.Instance.Register(UiEventType.ChangeSensorList, OnChangeSensorList);
         UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnChangeTrendLine);
+        UiManager.Instance.Register(UiEventType.ChangeSensorValues, OnChangeTrendLine);
         UiManager.Instance.Register(UiEventType.ChangeSensorStatus, OnChangeSensorStatus);
         UiManager.Instance.Register(UiEventType.ChangeAlarmList, OnChangeAlarmList);
         UiManager.Instance.Register(UiEventType.CommitSensorUsing, OnCommitSensorUsing);
