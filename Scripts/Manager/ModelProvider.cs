@@ -35,7 +35,7 @@ public interface ModelProvider
 
     public AlarmCount GetObsStatusCountByAreaId(int areaId);
 
-    //public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId);
+    public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId);
 
     public DateTime GetCurrentChartEndTime();
 }

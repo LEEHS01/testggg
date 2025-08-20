@@ -151,96 +151,59 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     //List<float> seps = new();
     DateTime pastTimestamp = DateTime.Now;
-    void GetAlarmChangedProcess()
+    /*void GetAlarmChangedProcess()
     {
         DateTime newTimestamp = DateTime.Now;
+        //DateTime TEST_DT;
 
+        //Debug.Log("CHECKTIME Request start :" + DateTime.Now.ToString("ss.fff"));
+        //TEST_DT = DateTime.Now;
         dbManager.GetAlarmLogsChangedInRange(pastTimestamp, newTimestamp, changedList =>
         {
+            //seps.Add((float)(DateTime.Now - TEST_DT).TotalSeconds);
+            //float variance = seps.Select(v => (v - seps.Average()) * (v - seps.Average())).Average();
+            //float stdDev = (float)Math.Sqrt(variance);
+
             changedList = changedList.OrderBy(x => x.alacode).ToList();
 
-            // 신규/해제 알람 구분
-            List<AlarmLogModel> toAddModels = changedList.Where(changed =>
-                Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
-            List<AlarmLogModel> toRemoveModels = changedList.Where(changed =>
-                changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
+            //변경사항들을 신규 알람과 해제된 알람으로 구분
+            List<AlarmLogModel> toAddModels = changedList.Where(changed => Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
 
-            // currentAlarms 업데이트 (활성 알람만)
-            currentAlarms.AddRange(toAddModels.Where(model => string.IsNullOrEmpty(model.turnoff_flag))
-                .Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
-            IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
-            currentAlarms.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));
+            //해제된 알람 유지하기위해 주석처리함
+            //List<AlarmLogModel> toRemoveModels = changedList.Where(changed => changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
 
-            // historicalAlarms 업데이트 (모든 알람)
-            historicalAlarms.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
+            //신규 알람을 파싱한 뒤 리스트에 추가
+            logDataList.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
+
+            //해제된 알람의 idx를 가진 로그데이터들을 제거->>> 해제된 알람 유지를 위한 주석처리
+            *//*IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
+            logDataList.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));*//*
+
             DateTime oneWeekAgo = DateTime.Now.AddDays(-7);
-            int removedOldCount = historicalAlarms.RemoveAll(logData => logData.time < oneWeekAgo);
+            int removedOldCount = logDataList.RemoveAll(logData => logData.time < oneWeekAgo);
 
-            pastTimestamp = newTimestamp; // ✅ 여기 한 번만!
+            pastTimestamp = newTimestamp;
 
-            // 센서값과 상태 업데이트
-            if (currentObsId > 0)
-            {
-                dbManager.GetToxinValueLast(currentObsId, currents =>
-                {
-                    // 1. 센서 상태 초기화
-                    toxins.ForEach(t => t.status = ToxinStatus.Green);
 
-                    // 2. 값과 임계값 기반 상태 업데이트
-                    toxins.ForEach(toxin =>
-                    {
-                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
-                        if (curr != null)
-                        {
-                            toxin.UpdateValue(curr);
-
-                            // 임계값 기반 상태 계산
-                            if (curr.val >= curr.hihi)
-                                toxin.status = ToxinStatus.Red;
-                            else if (curr.val >= curr.hi)
-                                toxin.status = ToxinStatus.Yellow;
-                            else
-                                toxin.status = ToxinStatus.Green;
-                        }
-                    });
-
-                    // 3. 활성 알람 기반 상태 보정
-                    currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log =>
-                    {
-                        var toxin = toxins.Find(t => t.boardid == log.boardId && t.hnsid == log.hnsId);
-                        if (toxin != null)
-                        {
-                            // 알람 상태가 더 높으면 업데이트
-                            ToxinStatus alarmStatus = log.status == 0 ? ToxinStatus.Purple :
-                                                      log.status == 1 ? ToxinStatus.Yellow :
-                                                      ToxinStatus.Red;
-
-                            // 더 높은 상태로 업데이트
-                            if ((int)alarmStatus > (int)toxin.status)
-                            {
-                                toxin.status = alarmStatus;
-                            }
-                        }
-                    });
-
-                    // 4. UI 업데이트
-                    uiManager.Invoke(UiEventType.ChangeSensorValues);
-                    uiManager.Invoke(UiEventType.ChangeSensorStatus); // 상태도 업데이트
-                });
-            }
-
-            // 알람 변화가 있을 때만 알람 리스트 업데이트
+            //알람 로그 리스트에 변화가 발생 시
             if (changedList.Count != 0)
             {
-                Debug.Log($"알람 변화 발생: 신규 {toAddModels.Count}, 해제 {toRemoveModels.Count}");
+                Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 발생했습니다 \n" +
+                    $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
+
+                //ChangeAlarmList 이벤트
                 uiManager.Invoke(UiEventType.ChangeAlarmList);
+            }
+            else
+            {
+                Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 없습니다.\n" +
+                    $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
             }
         });
 
-        // 6초 후 재실행
         DOVirtual.DelayedCall(6, GetAlarmChangedProcess);
-    }
-    /*void GetAlarmChangedProcess()
+    }*/
+    void GetAlarmChangedProcess()
     {
         DateTime newTimestamp = DateTime.Now;
 
@@ -270,7 +233,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             pastTimestamp = newTimestamp;
 
-            // 알람 변화와 상관없이 매번 센서값과 상태 업데이트
+            // ✅ 알람 변화와 상관없이 매번 센서값과 상태 업데이트
             if (currentObsId > 0)
             {
                 dbManager.GetToxinValueLast(currentObsId, currents =>
@@ -329,7 +292,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
         });
 
         DOVirtual.DelayedCall(6, GetAlarmChangedProcess);
-    }*/
+    }
 
     void GetStepProcess() 
     {

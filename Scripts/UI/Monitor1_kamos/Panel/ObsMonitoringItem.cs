@@ -53,41 +53,7 @@ public class ObsMonitoringItem : MonoBehaviour
         btnSelectCurrentSensor.onClick.AddListener(OnClick);
     }
 
-    public void SetToxinData(int obsId, ToxinData toxin)
-    {
-        this.toxin = toxin;
-        this.obsId = obsId;
-
-        // 값 즉시 표시
-        lblSensorName.text = toxin.hnsName;
-        lblValue.text = toxin.GetLastValue().ToString("F2");
-        lblUnit.text = toxin.unit ?? "";
-
-        gameObject.SetActive(toxin.on);
-
-        // 상태는 ToxinData에 이미 계산되어 있음
-        imgSignalLamp.color = statusColorDic[toxin.status]; // GetSensorStatus 호출 제거
-    }
-
-    public void ResetToxinStatus()
-    {
-        if (toxin == null) return;
-
-        // 값과 상태를 동시에 업데이트
-        lblValue.text = toxin.GetLastValue().ToString("F2");
-        imgSignalLamp.color = statusColorDic[toxin.status]; // 이미 계산된 상태 사용
-    }
-
-    public void UpdateValueAndStatus(ToxinData newData)
-    {
-        this.toxin = newData;
-
-        // 값과 상태 동시 업데이트 (한 프레임에)
-        lblValue.text = newData.GetLastValue().ToString("F2");
-        imgSignalLamp.color = statusColorDic[newData.status];
-    }
-    #region
-    /*public void SetToxinData(int obsId, ToxinData toxin) 
+    public void SetToxinData(int obsId, ToxinData toxin) 
     {
         //Debug.Log($"ObsMonitoringItem toxin is null: {toxin == null}");
         //Debug.Log($"ObsMonitoringItem lblSensorName is null: {lblSensorName == null}");
@@ -114,8 +80,8 @@ public class ObsMonitoringItem : MonoBehaviour
 
         // *** 추가: 실시간 값도 함께 업데이트 ***
         lblValue.text = "" + toxin.GetLastValue().ToString("F2");
-    }*/
-    #endregion
+    }
+
 
     private void OnClick() 
     {

@@ -75,7 +75,7 @@ public class ObsMonitoring : MonoBehaviour
         lblStatus = transform.Find("lblStatus").GetComponent<TMP_Text>();
         imgSingalLamp = transform.Find("Icon_EventPanel_TitleCircle").Find("Icon_SignalLamp").GetComponent<Image>();
 
-        // 원본 이미지 색상 저장
+        // ✅ 원본 이미지 색상 저장
         if (lblToxin != null)
             originalImageColor = lblToxin.color;
 
@@ -224,17 +224,6 @@ public class ObsMonitoring : MonoBehaviour
         DOTween.To(() => fromPos, x => fromPos = x, toPos, duration).OnUpdate(() => {
             GetComponent<RectTransform>().position = fromPos;
         });
-    }
-
-    private void OnChangeSensorValues(object obj)
-    {
-        // 모든 아이템 한 번에 업데이트
-        List<ToxinData> allToxins = modelProvider.GetToxins();
-
-        for (int i = 0; i < allItems.Count && i < allToxins.Count; i++)
-        {
-            allItems[i].UpdateValueAndStatus(allToxins[i]);
-        }
     }
 
     #region [보드 상태 표시 기능]
