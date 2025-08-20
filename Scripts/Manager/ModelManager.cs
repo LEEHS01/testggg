@@ -233,57 +233,45 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             pastTimestamp = newTimestamp;
 
-            // ✅ 알람 변화와 상관없이 매번 센서값과 상태 업데이트
+            // 🔴 개선: 센서값과 상태를 한번에 업데이트
             if (currentObsId > 0)
             {
                 dbManager.GetToxinValueLast(currentObsId, currents =>
                 {
-                    Debug.Log($"6초마다 센서값/상태 업데이트");
-
-                    // 센서값 업데이트
+                    // 값과 상태를 동시에 업데이트
                     toxins.ForEach(toxin =>
                     {
                         var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
-                        if (curr != null) toxin.UpdateValue(curr);
+                        if (curr != null)
+                        {
+                            // ✨ UpdateValue 내부에서 상태도 함께 계산
+                            toxin.UpdateValue(curr);  // ToxinData.UpdateValue()가 상태도 설정
+                        }
                     });
 
-                    // 상태 초기화
-                    toxins.ForEach(t => t.status = ToxinStatus.Green);
-
-                    // 임계값 기반 상태 계산
-                    toxins.ForEach(toxin =>
+                    // 활성 알람 기반 상태 보정 (더 높은 상태로만 업데이트)
+                    currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log =>
                     {
-                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
-                        if (curr != null && curr.val.HasValue)
-                        {
-                            if (curr.val >= curr.hihi)
-                                toxin.status = ToxinStatus.Red;
-                            else if (curr.val >= curr.hi)
-                                toxin.status = ToxinStatus.Yellow;
-                        }
-                        // Temperature 디버그
-                        if (toxin.hnsName.Contains("Temperature"))
-                        {
-                            Debug.Log($"Temperature 상태: {curr.val} → {toxin.status} (hi={curr.hi}, hihi={curr.hihi})");
-                        }
-                    });
-
-                    // 활성 알람 기반 상태 보정
-                    currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log => {
-                        ToxinStatus logStatus = log.status == 0 ? ToxinStatus.Purple : (ToxinStatus)log.status;
-                        ToxinData toxin = toxins.Find(t => t.boardid == log.boardId && (logStatus == ToxinStatus.Purple || t.hnsid == log.hnsId));
+                        var toxin = toxins.Find(t => t.boardid == log.boardId && t.hnsid == log.hnsId);
                         if (toxin != null)
                         {
-                            toxin.status = (ToxinStatus)Math.Max((int)logStatus, (int)toxin.status);
+                            ToxinStatus alarmStatus = log.status == 0 ? ToxinStatus.Purple :
+                                                      log.status == 1 ? ToxinStatus.Yellow :
+                                                      ToxinStatus.Red;
+
+                            if ((int)alarmStatus > (int)toxin.status)
+                            {
+                                toxin.status = alarmStatus;
+                            }
                         }
                     });
-                    uiManager.Invoke(UiEventType.ChangeSensorValues);   // ObsMonitoring 센서값만
-                    //uiManager.Invoke(UiEventType.ChangeTrendLine);
-                    uiManager.Invoke(UiEventType.ChangeSensorStatus);
+
+                    // 🔴 개선: 하나의 이벤트로 통합
+                    uiManager.Invoke(UiEventType.ChangeSensorStatus);  // 통합 이벤트
                 });
             }
 
-            // 알람 변화가 있을 때만 알람 관련 이벤트
+            // 알람 변화가 있을 때만 알람 리스트 업데이트
             if (changedList.Count != 0)
             {
                 Debug.Log($"알람 변화 발생: 신규 {toAddModels.Count}, 해제 {toRemoveModels.Count}");
@@ -291,6 +279,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             }
         });
 
+        // 6초 후 재실행
         DOVirtual.DelayedCall(6, GetAlarmChangedProcess);
     }
 

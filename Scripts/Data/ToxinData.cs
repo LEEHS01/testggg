@@ -28,7 +28,7 @@ namespace Onthesys
         public List<float> diffValues;
         public bool on = true;
         public bool fix = false;
-        public ToxinStatus status = ToxinStatus.Green;
+        public ToxinStatus status { get; set; } = ToxinStatus.Green;
         public List<DateTime> dateTimes; // 각 값의 실제 측정 시간
         public string unit;  // 단위 추가
         public string stcd = "00";  // STCD 상태코드 추가
@@ -54,20 +54,26 @@ namespace Onthesys
 
         public void UpdateValue(CurrentDataModel model)
         {
-            //Debug.Log("ToxinData.UpdateValue");
+
             if (model != null)
             {
-                //Debug.LogError($" 실시간 값 확인: board={model.boardidx}, hns={model.hnsidx}, val={model.val}");
-                /*if (hnsid == 4 && boardid == 3)
-                    Debug.LogError($"UpdateValue bef{this.on} {model.useyn}");*/
                 this.serious = model.hi;
                 this.warning = model.hihi;
                 this.on = Convert.ToInt32(model.useyn) == 1;
                 this.fix = Convert.ToInt32(model.fix) == 1;
                 this.stcd = model.stcd ?? "00";
                 this.SetLastValue(model.val);
-                /*if (hnsid == 4 && boardid == 3)
-                    Debug.LogError($"UpdateValue aft {this.on} {model.useyn}");*/
+
+                // 상태도 여기서 계산 (옵션)
+                if (!this.fix && model.val.HasValue)
+                {
+                    if (model.val >= model.hihi)
+                        this.status = ToxinStatus.Red;
+                    else if (model.val >= model.hi)
+                        this.status = ToxinStatus.Yellow;
+                    else
+                        this.status = ToxinStatus.Green;
+                }
             }
         }
 

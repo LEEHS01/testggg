@@ -55,31 +55,26 @@ public class ObsMonitoringItem : MonoBehaviour
 
     public void SetToxinData(int obsId, ToxinData toxin) 
     {
-        //Debug.Log($"ObsMonitoringItem toxin is null: {toxin == null}");
-        //Debug.Log($"ObsMonitoringItem lblSensorName is null: {lblSensorName == null}");
-        //Debug.Log($"ObsMonitoringItem imgSignalLamp is null: {imgSignalLamp == null}");
+
         this.toxin = toxin;
-        lblSensorName.text = toxin.hnsName;
-        //lblUnit.text =  "" + toxin.warning;
-        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
-        lblUnit.text = toxin.unit ?? "";
         this.obsId = obsId;
+
+        lblSensorName.text = toxin.hnsName;
+        lblValue.text = toxin.GetLastValue().ToString("F2");
+        lblUnit.text = toxin.unit ?? "";
 
         gameObject.SetActive(toxin.on);
 
-        ToxinStatus sensorStatus = modelProvider.GetSensorStatus(obsId, toxin.boardid, toxin.hnsid);
-        imgSignalLamp.color = statusColorDic[sensorStatus];
+        //modelProvider.GetSensorStatus() 대신 toxin.status 직접 사용
+        imgSignalLamp.color = statusColorDic[toxin.status];
     }
 
     public void ResetToxinStatus() 
     {
-        if (obsId < 1 || toxin == null) return; 
+        if (obsId < 1 || toxin == null) return;
 
-        ToxinStatus sensorStatus = modelProvider.GetSensorStatus(obsId, toxin.boardid, toxin.hnsid);
-        imgSignalLamp.color = statusColorDic[sensorStatus];
-
-        // *** 추가: 실시간 값도 함께 업데이트 ***
-        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
+        lblValue.text = toxin.GetLastValue().ToString("F2");  // 값
+        imgSignalLamp.color = statusColorDic[toxin.status];   // 상태
     }
 
 

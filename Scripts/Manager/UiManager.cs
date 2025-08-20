@@ -232,7 +232,6 @@ public enum UiEventType
 
 
     ChangeTrendLine,    //실시간 트렌드 갱신
-    ChangeSensorValues,     // 6초마다 - 센서값만 업데이트 (ObsMonitoring)
     ChangeSummary,    //연간 지역 알람 요약본 업데이트 (기존 OnChangeSummary)
     ChangeAlarmList,            //알람리스트 변동 발생 (기존 OnAlarmUpdated)
     ChangeSensorList,           //센서리스트 변동 발생 (기존 OnLoadSetting)
