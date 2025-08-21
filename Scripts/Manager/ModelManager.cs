@@ -77,6 +77,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
         uiManager.Register(UiEventType.CommitBoardFixing, OnCommitBoardFixing);
         uiManager.Register(UiEventType.CommitSensorUsing, OnCommitSensorUsing);
         uiManager.Register(UiEventType.CommitCctvUrl, OnCommitCctvUrl);
+        uiManager.Register(UiEventType.UpdateThreshold, OnCommitThresholdUpdate);
         AwaitInitiating();
     }
 
@@ -944,6 +945,40 @@ public class ModelManager : MonoBehaviour, ModelProvider
         dbManager.SetObsCctv(obsId, cctvType, url, () => Debug.Log($"CommitCctvUrl - completed"));
     }
 
+    private void OnCommitThresholdUpdate(object obj)
+    {
+        if (obj is not (int obsId, int boardId, int hnsId, string column, float value)) return;
+
+        // 환경설정 센서 갱신
+        var toxin = GetToxinsSetting()
+            .Find(item => item.boardid == boardId && item.hnsid == hnsId);
+
+        if (toxin == null) return;
+
+        // 로컬 데이터 업데이트
+        if (column == "ALAHIVAL") toxin.serious = value;
+        else if (column == "ALAHIHIVAL") toxin.warning = value;
+
+        // 모니터링 센서도 갱신 (현재 관측소인 경우)
+        if (currentObsId == obsId)
+        {
+            var monitoringToxin = GetToxin(boardId, hnsId);
+            if (monitoringToxin != null)
+            {
+                if (column == "ALAHIVAL") monitoringToxin.serious = value;
+                else if (column == "ALAHIHIVAL") monitoringToxin.warning = value;
+            }
+        }
+
+        // DB 업데이트
+        UpdateColumn updateColumn = column == "ALAHIVAL" ? UpdateColumn.ALAHIVAL : UpdateColumn.ALAHIHIVAL;
+        dbManager.SetToxinDataProperty(obsId, toxin, updateColumn, () =>
+        {
+            Debug.Log($"CommitThresholdUpdate - {column} = {value} 완료");
+            // UI 새로고침 이벤트 발생
+            uiManager.Invoke(UiEventType.ChangeSettingSensorList);
+        });
+    }
     #endregion [EventListener]
 
     #region [DataStructs]

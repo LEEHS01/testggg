@@ -113,7 +113,7 @@ public class PopupSetting : MonoBehaviour
                 txtSearchQuality.onValueChanged.AddListener(OnChangeSearchSensor);
 
                 chlUsingQuality = pnlBoardQuality.GetComponentsInChildren<PopupSettingItem>().ToList();
-                chlUsingQuality.ForEach(item => item.SetItem(obsId, 3, -1, "불러오는 중...", true));
+                chlUsingQuality.ForEach(item => item.SetItem(obsId, 3, -1, "불러오는 중...", true, 0f, 0f));
             }
 
             Transform pnlBoardChemical = pnlTabObs.transform.Find("pnlBoardChemical");
@@ -125,7 +125,7 @@ public class PopupSetting : MonoBehaviour
                 txtSearchChemical.onValueChanged.AddListener(OnChangeSearchSensor);
 
                 chlUsingChemical = pnlBoardChemical.GetComponentsInChildren<PopupSettingItem>().ToList();
-                chlUsingChemical.ForEach(item => item.SetItem(obsId, 2, -1, "불러오는 중...", true));
+                chlUsingChemical.ForEach(item => item.SetItem(obsId, 2, -1, "불러오는 중...", true, 0f, 0f));
             }
 
             Transform pnlCctvUrl = pnlTabObs.transform.Find("pnlCctvUrl");
@@ -174,8 +174,6 @@ public class PopupSetting : MonoBehaviour
         UiManager.Instance.Register(UiEventType.CommitBoardFixing, tuple => Debug.LogWarning("CommitBoardFixing occured : " + tuple));
         UiManager.Instance.Register(UiEventType.CommitCctvUrl, tuple => Debug.LogWarning("CommitCctvUrl occured : " + tuple));
 
-        //경계, 경고 수정 이벤트
-        UiManager.Instance.Register(UiEventType.UpdateThreshold, OnUpdateThreshold);
     }
 
     #region [Basic Function]
@@ -228,7 +226,8 @@ public class PopupSetting : MonoBehaviour
                 int sensorId = i + 1;
                 ToxinData toxin = toxinsChemical.Find(item => item.hnsid == sensorId);
                 PopupSettingItem item = chlUsingChemical[i];
-                item.SetItem(obsId, 2, sensorId, toxin.hnsName, toxin.on);
+                //item.SetItem(obsId, 2, sensorId, toxin.hnsName, toxin.on);
+                item.SetItem(obsId, 2, sensorId, toxin.hnsName, toxin.on, toxin.serious, toxin.warning);
             }
             OnChangeSearchSensor("");
         }
@@ -241,7 +240,8 @@ public class PopupSetting : MonoBehaviour
                 int sensorId = i + 1;
                 ToxinData toxin = toxinsQuality.Find(item => item.hnsid == sensorId);
                 PopupSettingItem item = chlUsingQuality[i];
-                item.SetItem(obsId, 3, sensorId, toxin.hnsName, toxin.on);
+                //item.SetItem(obsId, 3, sensorId, toxin.hnsName, toxin.on);
+                item.SetItem(obsId, 3, sensorId, toxin.hnsName, toxin.on, toxin.serious, toxin.warning);
             }
             chlUsingQuality.ForEach(item => item.gameObject.SetActive(item.isValid));
         }
@@ -389,17 +389,5 @@ public class PopupSetting : MonoBehaviour
 
     #endregion [System Tab]
 
-    #region 경계,경보값 수정
-    private void OnUpdateThreshold(object obj)
-    {
-        if (obj is not (int obsId, int boardId, int hnsId, string column, float value)) return;
-
-        StartCoroutine(DbManager.Instance.SetToxinDataPropertyFunc(obsId, boardId, hnsId, column, value,
-            () => {
-                // 성공 시 데이터 새로고침
-                OnChangeSettingSensorList(null);
-            }));
-    }
-    #endregion
 
 }
