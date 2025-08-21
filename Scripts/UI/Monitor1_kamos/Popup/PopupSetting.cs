@@ -85,6 +85,7 @@ public class PopupSetting : MonoBehaviour
 
             btnClose = transform.Find("btnClosePopup").GetComponent<Button>();
             btnClose.onClick.AddListener(OnCloseSetting);
+
         }
 
         //tabObs 구성요소
@@ -172,6 +173,9 @@ public class PopupSetting : MonoBehaviour
         UiManager.Instance.Register(UiEventType.CommitSensorUsing, tuple => Debug.LogWarning("CommitSensorUsing occured : " + tuple));
         UiManager.Instance.Register(UiEventType.CommitBoardFixing, tuple => Debug.LogWarning("CommitBoardFixing occured : " + tuple));
         UiManager.Instance.Register(UiEventType.CommitCctvUrl, tuple => Debug.LogWarning("CommitCctvUrl occured : " + tuple));
+
+        //경계, 경고 수정 이벤트
+        UiManager.Instance.Register(UiEventType.UpdateThreshold, OnUpdateThreshold);
     }
 
     #region [Basic Function]
@@ -385,6 +389,17 @@ public class PopupSetting : MonoBehaviour
 
     #endregion [System Tab]
 
+    #region 경계,경보값 수정
+    private void OnUpdateThreshold(object obj)
+    {
+        if (obj is not (int obsId, int boardId, int hnsId, string column, float value)) return;
 
+        StartCoroutine(DbManager.Instance.SetToxinDataPropertyFunc(obsId, boardId, hnsId, column, value,
+            () => {
+                // 성공 시 데이터 새로고침
+                OnChangeSettingSensorList(null);
+            }));
+    }
+    #endregion
 
 }

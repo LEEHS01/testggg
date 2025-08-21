@@ -228,6 +228,8 @@ public enum UiEventType
     SelectCctv,     //관측소 내의 Cctv 선택
     SelectSettingObs,   //환경설정 창 내에서 관측소 선택
 
+    UpdateThreshold,    //경고, 경계값 수정 수정시 발생
+
     Popup_AiTrend,          //독성+유해물질 상세 팝업(AI값)
 
 
