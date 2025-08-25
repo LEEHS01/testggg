@@ -28,8 +28,12 @@ public class PopupSettingItem : MonoBehaviour
 
         tglVisibility.onValueChanged.AddListener(OnValueChanged);
 
-        hiField.onEndEdit.AddListener(OnHiValueChanged);
-        hihiField.onEndEdit.AddListener(OnHiHiValueChanged);
+        // null 체크 추가
+        if (hiField != null)
+            hiField.onEndEdit.AddListener(OnHiValueChanged);
+        if (hihiField != null)
+            hihiField.onEndEdit.AddListener(OnHiHiValueChanged);
+
     }
 
     public void SetItem(int obsId, int boardId, int hnsId, string sensorName, bool isVisible, float hiValue, float hihiValue) 
@@ -38,8 +42,9 @@ public class PopupSettingItem : MonoBehaviour
         tglVisibility.SetIsOnWithoutNotify(isVisible);
 
         // 임계값 설정
-        hiField.text = hiValue.ToString("F1");
-        hihiField.text = hihiValue.ToString("F1");
+        if (hiField != null) hiField.text = hiValue.ToString("F1");
+        if (hihiField != null) hihiField.text = hihiValue.ToString("F1");
+
 
         this.obsId = obsId;
         this.boardId = boardId;
@@ -56,6 +61,8 @@ public class PopupSettingItem : MonoBehaviour
     #region 경계, 경고값 수정
     private void OnHiValueChanged(string value)
     {
+        if (!isValid) return;
+
         if (float.TryParse(value, out float newHi))
         {
             UiManager.Instance.Invoke(UiEventType.UpdateThreshold,
@@ -65,6 +72,8 @@ public class PopupSettingItem : MonoBehaviour
 
     private void OnHiHiValueChanged(string value)
     {
+        if (!isValid) return;
+
         if (float.TryParse(value, out float newHiHi))
         {
             UiManager.Instance.Invoke(UiEventType.UpdateThreshold,

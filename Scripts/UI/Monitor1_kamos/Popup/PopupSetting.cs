@@ -43,6 +43,9 @@ public class PopupSetting : MonoBehaviour
 
     //팝업 시 사용할 기본 위치
     Vector3 defaultPos;
+
+    //독성도 경보값 수정
+    public TMP_InputField txtToxinWarning;
     #endregion [Variables]
 
     static Dictionary<ToxinStatus, Color> statusColorDic = new();
@@ -102,6 +105,8 @@ public class PopupSetting : MonoBehaviour
             {
                 tglBoardToxin = pnlBoardToxin.Find("tglBoardFixing").GetComponent<Toggle>();
                 tglBoardToxin.onValueChanged.AddListener(isFixing => OnToggleBoard(1, !isFixing));
+
+                txtToxinWarning.onEndEdit.AddListener(OnToxinWarningChanged);
             }
 
             Transform pnlBoardQuality = pnlTabObs.transform.Find("pnlBoardQuality");
@@ -217,7 +222,14 @@ public class PopupSetting : MonoBehaviour
     private void OnChangeSettingSensorList(object obj)
     {
         List<ToxinData> toxins = modelProvider.GetToxinsSetting();
-        
+
+        //독성도
+        ToxinData toxinData = toxins.Find(toxin => toxin.boardid == 1);
+        if (toxinData != null)
+        {
+            txtToxinWarning.SetTextWithoutNotify(toxinData.warning.ToString("F1"));
+        }
+
         //화학물질 센서들
         List<ToxinData> toxinsChemical = toxins.Where(toxin => toxin.boardid == 2).ToList();
         {
@@ -389,5 +401,15 @@ public class PopupSetting : MonoBehaviour
 
     #endregion [System Tab]
 
+    #region 독성도 경고값 수정
+    private void OnToxinWarningChanged(string value)
+    {
+        if (float.TryParse(value, out float newWarning))
+        {
+            UiManager.Instance.Invoke(UiEventType.UpdateThreshold,
+                (obsId, 1, 1, "ALAHIHIVAL", newWarning));
+        }
+    }
+    #endregion
 
 }
