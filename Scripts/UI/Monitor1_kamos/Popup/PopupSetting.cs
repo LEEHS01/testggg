@@ -15,6 +15,9 @@ using UnityEngine;
 using UnityEngine.UI;
 using ColorUtility = UnityEngine.ColorUtility;
 
+/// <summary>
+/// 환경설정 팝업 - 관측소 설정/시스템 설정 탭
+/// </summary>
 public class PopupSetting : MonoBehaviour
 {
     ModelProvider modelProvider => UiManager.Instance.modelProvider;
@@ -48,6 +51,9 @@ public class PopupSetting : MonoBehaviour
     public TMP_InputField txtToxinWarning;
     #endregion [Variables]
 
+    /// <summary>
+    /// 슬라이더용 색상 - 일반 상태 색상과 다름 (Green=노랑, Yellow=빨강 등)
+    /// </summary>
     static Dictionary<ToxinStatus, Color> statusColorDic = new();
 
     static PopupSetting()
@@ -68,7 +74,7 @@ public class PopupSetting : MonoBehaviour
     private void Start()
     {
         //PopupSetting 구성요소
-        { 
+        {
             Transform conTabButtons = transform.Find("conTabButtons");
             {
                 btnTabObs = conTabButtons.Find("btnTabObs").GetComponent<Button>();
@@ -187,6 +193,10 @@ public class PopupSetting : MonoBehaviour
         LoadAreaList();
         LoadObs(1);
     }
+
+    /// <summary>
+    /// 관측소에서 호출시 시스템 탭 숨김, 해당 관측소로 설정
+    /// </summary>
     private void OnPopupSetting(object obj)
     {
         if (obj is not int obsId) return;
@@ -194,7 +204,7 @@ public class PopupSetting : MonoBehaviour
         bool isFromObs = (obsId >= 1);
 
         //ObsMornitoring을 통해 켜질 때, 해당 관측소의 탭만을 제공
-        if (isFromObs) 
+        if (isFromObs)
         {
             OnOpenTab(pnlTabObs);
             OnNavigateObs(obsId);
@@ -204,7 +214,11 @@ public class PopupSetting : MonoBehaviour
         transform.position = defaultPos;
         gameObject.SetActive(true);
     }
-    private void OnNavigateObs(object obj) 
+
+    /// <summary>
+    /// 드롭다운을 해당 관측소에 맞게 자동 설정
+    /// </summary>
+    private void OnNavigateObs(object obj)
     {
         if (obj is not int obsId) return;
 
@@ -219,6 +233,7 @@ public class PopupSetting : MonoBehaviour
         int obsDdlIdx = ddlObs.options.IndexOf(obsDdlOpt);
         ddlObs.value = obsDdlIdx;
     }
+
     private void OnChangeSettingSensorList(object obj)
     {
         List<ToxinData> toxins = modelProvider.GetToxinsSetting();
@@ -243,7 +258,7 @@ public class PopupSetting : MonoBehaviour
             }
             OnChangeSearchSensor("");
         }
-        
+
         //수질 센서들
         List<ToxinData> toxinsQuality = toxins.Where(toxin => toxin.boardid == 3).ToList();
         {
@@ -272,7 +287,7 @@ public class PopupSetting : MonoBehaviour
         txtCctvEquipment.SetTextWithoutNotify(obs.src_video1);
         txtCctvOutdoor.SetTextWithoutNotify(obs.src_video2);
     }
-    
+
     private void OnCloseSetting()
     {
         gameObject.SetActive(false);
@@ -285,7 +300,7 @@ public class PopupSetting : MonoBehaviour
         btnTabObs.GetComponentInChildren<Image>().sprite = pnlTabObs == targetTab ? sprTabOn : sprTabOff;
         btnTabSystem.GetComponentInChildren<Image>().sprite = pnlTabSystem == targetTab ? sprTabOn : sprTabOff;
         //btnTabCctv  .GetComponentInChildren<Image>().sprite = pnlTabCctv == targetTab? sprTabOn : sprTabOff;
-        
+
         Color colorGray;
         if (!ColorUtility.TryParseHtmlString("#99B1CB", out colorGray)) throw new Exception("OnOpenTab - Parsing Color Failed!");
 
@@ -338,7 +353,7 @@ public class PopupSetting : MonoBehaviour
     }
     private void OnSelectObs(int idx)
     {
-        ObsData obs =  modelProvider.GetObss().Find(obs => obs.obsName == ddlObs.options[idx].text);
+        ObsData obs = modelProvider.GetObss().Find(obs => obs.obsName == ddlObs.options[idx].text);
         if (obs == null) return;
 
         this.obsId = obs.id;
@@ -353,6 +368,10 @@ public class PopupSetting : MonoBehaviour
         //Temporary Function
         UiManager.Instance.Invoke(UiEventType.CommitBoardFixing, (obsId, boardId, isFixing));
     }
+
+    /// <summary>
+    /// 센서 검색 및 화학물질 컨테이너 크기 동적 조정
+    /// </summary>
     private void OnChangeSearchSensor(string text)
     {
         int visibleItemCount = 0;
@@ -377,6 +396,9 @@ public class PopupSetting : MonoBehaviour
     #endregion [Obs Tab]
 
     #region [System Tab]
+    /// <summary>
+    /// 알람 임계값 슬라이더 - 역방향 계산 (1-value)
+    /// </summary>
     private void OnAlarmSliderChanged(float value)
     {
         int selectionCount = Enum.GetNames(typeof(ToxinStatus)).Length;
@@ -390,10 +412,8 @@ public class PopupSetting : MonoBehaviour
         Option.alarmThreshold = (ToxinStatus)choosenIdx;
 
         UiManager.Instance.Invoke(UiEventType.CommitPopupAlarmCondition, (ToxinStatus)choosenIdx);
-        //Debug.LogError($"new alarmThreshold : {choosenIdx}");
-        //Debug.LogError($"new alarmThreshold : {PlayerPrefs.GetInt("alarmThreshold", -1)}");
     }
-    private void OnChangeDbAddress(string dbAddress) 
+    private void OnChangeDbAddress(string dbAddress)
     {
         PlayerPrefs.SetString("dbAddress", dbAddress);
         Option.url = dbAddress;

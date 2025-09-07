@@ -38,16 +38,6 @@ namespace Onthesys
                 Option.alarmThreshold = (ToxinStatus)returnStatus;
             }
 
-            //Debug.LogError("PlayerPrefs.GetInt(\"alarmThreshold\", -1) : " + PlayerPrefs.GetInt("alarmThreshold", -1));
-            //alarm threshold 
-            /*  int returnStatus = PlayerPrefs.GetInt("alarmThreshold", -1);
-              if (returnStatus == -1) 
-              {
-                  Debug.LogWarning("there is no alarmThreshold in local storage");
-                  Option.alarmThreshold = ToxinStatus.Purple;
-              }
-
-              Option.alarmThreshold = (ToxinStatus)returnStatus;*/
         }
 
         public static bool ENABLE_DEBUG_CODE = false;

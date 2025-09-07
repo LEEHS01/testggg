@@ -27,7 +27,8 @@ public class PopupCCTV : MonoBehaviour
     private bool isEventRegistered = false;
 
     [Header("CCTV Settings")]
-    public string cctvIP = "192.168.1.109:50081";
+    //public string cctvIP = "192.168.1.109:50081";
+    public string cctvIP;   // ← 외부 IP로 변경
 
     private void OnEnable()
     {

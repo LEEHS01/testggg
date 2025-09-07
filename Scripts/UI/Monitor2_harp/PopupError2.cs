@@ -55,12 +55,6 @@ public class PopupError2 : MonoBehaviour
         btnClose.onClick.AddListener(OnCloseError);
         gameObject.SetActive(false);
 
-        //Debug.Log("PopupError2 Start() 완료");
-        /*deafultPos = transform.position;
-        UiManager.Instance.Register(UiEventType.PopupErrorMonitorB, OnPopupError);
-
-        btnClose.onClick.AddListener(OnCloseError);
-        gameObject.SetActive(false);*/
     }
 
     void OnPopupError(object obj)

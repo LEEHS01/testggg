@@ -1,4 +1,4 @@
-﻿using DG.Tweening;
+﻿/*using DG.Tweening;
 using Onthesys;
 using System;
 using System.Collections.Generic;
@@ -154,10 +154,10 @@ public class ModelProviderTest : ModelProvider
         return GetHighjackedToxins(modelProvider.GetToxinsSetting());
     }
 
-    /*public List<LogData> GetAlarms()
+    *//*public List<LogData> GetAlarms()
     {
         return modelProvider.GetAlarms();
-    }*/
+    }*//*
     public List<LogData> GetAlarmsForDisplay()
     {
         return modelProvider.GetAlarmsForDisplay();
@@ -202,3 +202,4 @@ public class ModelProviderTest : ModelProvider
         return modelProvider.GetCurrentChartEndTime();
     }
 }
+*/

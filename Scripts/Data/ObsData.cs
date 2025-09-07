@@ -6,9 +6,7 @@ using System.Data;
 using System.Linq;
 using UnityEngine;
 using UnityEngine.PlayerLoop;
-//using static UnityEditor.Progress;
-//using static UnityEditor.Progress;
-//using static UnityEngine.Rendering.DebugUI;
+
 
 namespace Onthesys
 {
@@ -21,8 +19,12 @@ namespace Onthesys
         public string obsName;
         public int step;
 
-        public string src_video1 = "rtsp://admin:HNS_qhdks_!Q@W3@192.168.1.108:554/video1?profile=high";//"rtsp://admin:HNS_qhdks_!Q@W3@115.91.85.42/video1?profile=high";
-        public string src_video2 = "rtsp://admin:HNS_qhdks_!Q@W3@192.168.1.109:50556/video1?profile=high";//"C:\\Users\\onthesys\\Downloads\\happyCat.mp4";//"rtsp://admin:HNS_qhdks_!Q@W3@115.91.85.42/video1?profile=high";
+        //public string src_video1 = "rtsp://admin:HNS_qhdks_!Q@W3@192.168.1.108:554/video1?profile=high";//"rtsp://admin:HNS_qhdks_!Q@W3@115.91.85.42/video1?profile=high";
+        //public string src_video2 = "rtsp://admin:HNS_qhdks_!Q@W3@192.168.1.109:50556/video1?profile=high";//"C:\\Users\\onthesys\\Downloads\\happyCat.mp4";//"rtsp://admin:HNS_qhdks_!Q@W3@115.91.85.42/video1?profile=high";
+
+        //¿ÜºÎ¸Á 
+        public string src_video1 = "rtsp://admin:HNS_qhdks_!Q@W3@115.91.85.42:554/video1?profile=high";
+        public string src_video2 = "rtsp://admin:HNS_qhdks_!Q@W3@115.91.85.42:50556/video1?profile=high";
         public string src_video_up = "";
         public string src_video_down = "";
         public string src_video_left = "";

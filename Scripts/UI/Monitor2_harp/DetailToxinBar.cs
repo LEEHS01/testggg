@@ -12,7 +12,9 @@ using UnityEngine;
 using static UnityEngine.Rendering.DebugUI;
 using UnityEngine.UI;
 
-
+/// <summary>
+/// 상세 독성 차트 바 - 개별 센서의 시계열 데이터 차트 + 툴팁 + 기간 선택
+/// </summary>
 internal class DetailToxinBar : MonoBehaviour
 {
     ModelProvider modelProvider => UiManager.Instance.modelProvider;
@@ -22,23 +24,22 @@ internal class DetailToxinBar : MonoBehaviour
     private DateTime aladt;
     public TMP_Text txtName;
     public UILineRenderer2 line;
-    public List<TMP_Text> hours;
-    public List<TMP_Text> verticals;
+    public List<TMP_Text> hours;      // 시간축 라벨
+    public List<TMP_Text> verticals;  // 값축 라벨
     public GameObject btnDetail;
 
-    //private int periodDays = 1;
-    public TMP_Dropdown periodDropdown;
+    public TMP_Dropdown periodDropdown; // 기간 선택 (1일/7일/30일)
 
-    //툴팁
+    #region 툴팁 컴포넌트
     [Header("Tooltip Components")]
     public GameObject tooltip;
     public TMP_Text txtTime;
     public TMP_Text txtValue;
-    public RectTransform chartArea;
+    public RectTransform chartArea; // 차트 영역
+    #endregion
 
-    private List<float> originalValues = new();
-
-
+    private List<float> originalValues = new(); // 툴팁용 원본 값들
+    private bool wasMouseInChartArea = false;   // 마우스 진입/퇴장 추적
 
     void Start()
     {
@@ -46,21 +47,15 @@ internal class DetailToxinBar : MonoBehaviour
         InitializeDropdown();
 
         UiManager.Instance.Register(UiEventType.SelectCurrentSensor, OnSelectCurrentSensor);
-        //UiManager.Instance.Register(UiEventType.SelectCurrentSensor, OnSelectLog);
-        //UiManager.Instance.Register(UiEventType.SelectAlarmSensor, OnSelectToxin);
-        UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnChangeTrendLine); // 이벤트 등록
+        UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnChangeTrendLine);
         btnDetail.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OnClick);
 
-        /*tooltip = transform.Find("Tooltip").gameObject;
-        txtTime = tooltip.transform.Find("txtTime").GetComponent<TMP_Text>();
-        txtValue = tooltip.transform.Find("txtValue").GetComponent<TMP_Text>();
-        chartArea = transform.Find("Chart_Grid").GetComponent<RectTransform>();*/
-
         tooltip.SetActive(false);
-
-        //UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (1, 0)); // 디폴트 센서 강제 트리거
     }
 
+    /// <summary>
+    /// AI 상세 분석 팝업 열기
+    /// </summary>
     private void OnClick()
     {
         if (toxinData == null) return;
@@ -76,6 +71,9 @@ internal class DetailToxinBar : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// 트렌드 라인 업데이트 시 차트 다시 그리기
+    /// </summary>
     private void OnChangeTrendLine(object obj)
     {
         if (toxinData == null) return;
@@ -83,45 +81,24 @@ internal class DetailToxinBar : MonoBehaviour
         if (toxinData.values.Count == 0)
             toxinData = modelProvider.GetToxin(toxinData.boardid, toxinData.hnsid);
 
-
         List<float> normalizedValues = new();
-        //float max = Math.Max(toxinData.values.Max(), toxinData.warning);
-        float max = toxinData.values.Max(); // warning 제거
+        float max = toxinData.values.Max();
+
         if (max <= 0)
         {
-            // 모든 값이 0 이하면 → 정규화 값도 모두 0
             toxinData.values.ForEach(val => normalizedValues.Add(0f));
         }
         else
         {
-            // 정상적인 정규화
             toxinData.values.ForEach(val => normalizedValues.Add(val / max));
         }
-
 
         line.UpdateControlPoints(normalizedValues);
 
         originalValues.Clear();
         originalValues.AddRange(toxinData.values);
-
     }
-    /*
-    private void OnSelectCurrentSensor(object obj)
-    {
-        if (obj is not (int boardId, int hnsId)) return;
 
-        toxinData = modelProvider.GetToxin(toxinData.boardid, toxinData.hnsid);
-
-        txtName.text = toxinData.hnsName;
-
-        List<float> normalizedValues = new();
-        float max = Math.Max(toxinData.values.Max(), toxinData.warning);
-        toxinData.values.ForEach(val => normalizedValues.Add(val / max));
-        SetVertical(max);
-        SetDynamicHours(1);
-        line.UpdateControlPoints(normalizedValues);
-    }
-    */
     private void Initialize()
     {
         SetDynamicHours(1);
@@ -129,18 +106,17 @@ internal class DetailToxinBar : MonoBehaviour
         this.btnDetail.SetActive(true);
     }
 
-    
-
+    /// <summary>
+    /// 센서 선택 시 해당 센서의 차트 표시
+    /// </summary>
     private void OnSelectCurrentSensor(object obj)
     {
-        // 전달된 값이 튜플 형식이 아닌 경우
         if (obj is not (int boardId, int hnsId))
         {
             Debug.LogError("[OnSelectCurrentSensor] 잘못된 파라미터 전달됨 (expected: (int, int))");
             return;
         }
 
-        // ToxinData 조회
         toxinData = modelProvider.GetToxin(boardId, hnsId);
 
         if (toxinData == null)
@@ -154,25 +130,21 @@ internal class DetailToxinBar : MonoBehaviour
             Debug.LogWarning($"[OnSelectCurrentSensor] 센서 값이 비어 있음 (boardId={boardId}, hnsId={hnsId})");
             return;
         }
-       
 
-        // 이름 표시
         txtName.text = toxinData.hnsName;
 
         Debug.Log($"Min: {toxinData.values.Min()}, Max: {toxinData.values.Max()}, Average: {toxinData.values.Average()}");
-        // 정규화 후 라인 그래프 업데이트
+
+        // 0으로 나누기 방지 정규화
         List<float> normalizedValues = new();
-        //float max = Math.Max(toxinData.values.Max(), toxinData.warning);
         float max = toxinData.values.Max();
-        //float max = Math.Max(toxinData.values.Max(), 1.0f);
+
         if (max <= 0)
         {
-            // 모든 값이 0 이하면 → 정규화 값도 모두 0
             toxinData.values.ForEach(val => normalizedValues.Add(0f));
         }
         else
         {
-            // 정상적인 정규화
             toxinData.values.ForEach(val => normalizedValues.Add(val / max));
         }
 
@@ -185,6 +157,9 @@ internal class DetailToxinBar : MonoBehaviour
         originalValues.AddRange(toxinData.values);
     }
 
+    /// <summary>
+    /// 기간 선택 드롭다운 초기화 (1일/7일/30일)
+    /// </summary>
     private void InitializeDropdown()
     {
         if (periodDropdown == null)
@@ -206,7 +181,6 @@ internal class DetailToxinBar : MonoBehaviour
 
         Debug.Log("Dropdown 초기화 완료");
     }
-
 
     public void OnSelectLog(object data)
     {
@@ -235,15 +209,9 @@ internal class DetailToxinBar : MonoBehaviour
         int periodDays = 1;
         switch (periodDropdown.value)
         {
-            case 0:
-                periodDays = 1;  // 1일
-                break;
-            case 1:
-                periodDays = 7;  // 7일
-                break;
-            case 2:
-                periodDays = 30; // 30일
-                break;
+            case 0: periodDays = 1; break; // 1일
+            case 1: periodDays = 7; break; // 7일
+            case 2: periodDays = 30; break; // 30일
         }
         return periodDays;
     }
@@ -259,10 +227,8 @@ internal class DetailToxinBar : MonoBehaviour
         var convertedData = ConvertToChartData(toxinData);
         line.UpdateControlPoints(convertedData);
         SetVertical(Mathf.Max(convertedData.Max()));
-        //SetVertical(Mathf.Max( convertedData.Max(), toxinData.warning));
         SetDynamicHours(periodDays);
     }
-
 
     private List<float> ConvertToChartData(ToxinData toxin)
     {
@@ -283,40 +249,36 @@ internal class DetailToxinBar : MonoBehaviour
         return lchart;
     }
 
+    /// <summary>
+    /// 실제 DB 시간 데이터로 시간축 라벨 설정
+    /// </summary>
     private void SetDynamicHours(int periodDays)
     {
-        // toxinData에 저장된 실제 시간 사용
         if (toxinData?.dateTimes != null && toxinData.dateTimes.Count > 0)
         {
-            /*Debug.Log($"DB 반환 데이터 개수: {toxinData.dateTimes.Count}");
-            Debug.Log($"첫 데이터: {toxinData.dateTimes.First()}");
-            Debug.Log($"마지막 데이터: {toxinData.dateTimes.Last()}");*/
             DateTime actualStartTime = toxinData.dateTimes.First();
             DateTime actualEndTime = toxinData.dateTimes.Last();
 
             var interval = (actualEndTime - actualStartTime).TotalMinutes / (this.hours.Count - 1);
-
-            //Debug.Log($"🕒 실제 DB 시간 범위: {actualStartTime:HH:mm} ~ {actualEndTime:HH:mm}");
 
             for (int i = 0; i < this.hours.Count; i++)
             {
                 var t = actualStartTime.AddMinutes(interval * i);
                 this.hours[i].text = t.ToString("MM-dd\nHH:mm");
             }
-
-            //Debug.Log("✅ 실제 DB 시간으로 라벨 설정 완료");
         }
     }
 
+    /// <summary>
+    /// 값축 라벨 설정 - 역순으로 표시 (위쪽이 큰 값)
+    /// </summary>
     private void SetVertical(float max)
     {
         var verticalMax = max + 1;
 
         for (int i = 0; i < this.verticals.Count; i++)
         {
-            float ratio = ((float)this.verticals.Count - i-1) / (verticals.Count-1);
-            //Debug.Log("ratio : " + ratio);
-            //Debug.Log("Math.Round((verticalMax * ratio),2) : " + Math.Round((verticalMax * ratio),2));
+            float ratio = ((float)this.verticals.Count - i - 1) / (verticals.Count - 1);
             this.verticals[i].text = Math.Round((verticalMax * ratio)).ToString();
         }
     }
@@ -342,56 +304,51 @@ internal class DetailToxinBar : MonoBehaviour
         }
     }
 
-    #region 툴팁
+    #region 툴팁 시스템
     /// <summary>
-    /// 캔버스(Target Display 포함)를 기준으로 올바른 스크린 좌표를 얻는다.
-    /// RelativeMouseAt가 유효하면 그 값을 쓰고, 아니면 스케일 보정으로 폴백.
-    /// 모든 배열 접근은 범위 체크 후 실행한다.
+    /// 멀티 디스플레이 환경에서 정확한 마우스 좌표 계산
     /// </summary>
     private bool TryGetPointerOnCanvas(Canvas canvas, out Vector2 screenPos)
     {
 #if UNITY_EDITOR
-        // 에디터에서는 그냥 현재 마우스 좌표 사용
         screenPos = Input.mousePosition;
         return true;
 #else
-    screenPos = default;
-    int target = (canvas != null) ? canvas.targetDisplay : 0;
+        screenPos = default;
+        int target = (canvas != null) ? canvas.targetDisplay : 0;
 
-    if (target < 0 || target >= Display.displays.Length)
-        return false;
+        if (target < 0 || target >= Display.displays.Length)
+            return false;
 
-    Vector3 raw = Input.mousePosition;
+        Vector3 raw = Input.mousePosition;
+        Vector3 rel = Display.RelativeMouseAt(raw);
+        
+        if (rel != Vector3.zero && (int)rel.z == target)
+        {
+            screenPos = new Vector2(rel.x, rel.y);
+            return true;
+        }
 
-    Vector3 rel = Display.RelativeMouseAt(raw);
-    if (rel != Vector3.zero && (int)rel.z == target)
-    {
-        screenPos = new Vector2(rel.x, rel.y);
+        // 폴백 계산
+        float x = raw.x;
+        int count = Mathf.Min(target, Display.displays.Length - 1);
+        for (int i = 0; i < count; i++)
+            x -= Display.displays[i].systemWidth;
+
+        Display disp = Display.displays[target];
+        float sx = (disp.systemWidth > 0) ? (float)disp.renderingWidth / disp.systemWidth : 1f;
+        float sy = (disp.systemHeight > 0) ? (float)disp.renderingHeight / disp.systemHeight : 1f;
+
+        x *= sx;
+        float y = raw.y * sy;
+
+        if (x < 0 || y < 0 || x > disp.renderingWidth || y > disp.renderingHeight)
+            return false;
+
+        screenPos = new Vector2(x, y);
         return true;
-    }
-
-    float x = raw.x;
-    int count = Mathf.Min(target, Display.displays.Length - 1);
-    for (int i = 0; i < count; i++)
-        x -= Display.displays[i].systemWidth;
-
-    Display disp = Display.displays[target];
-    float sx = (disp.systemWidth > 0) ? (float)disp.renderingWidth / disp.systemWidth : 1f;
-    float sy = (disp.systemHeight > 0) ? (float)disp.renderingHeight / disp.systemHeight : 1f;
-
-    x *= sx;
-    float y = raw.y * sy;
-
-    if (x < 0 || y < 0 || x > disp.renderingWidth || y > disp.renderingHeight)
-        return false;
-
-    screenPos = new Vector2(x, y);
-    return true;
 #endif
     }
-
-
-    private bool wasMouseInChartArea = false;
 
     void Update()
     {
@@ -411,10 +368,11 @@ internal class DetailToxinBar : MonoBehaviour
         {
             HideTooltip();
         }
-
-        //CheckMouseHover();
     }
 
+    /// <summary>
+    /// 마우스가 차트 영역 내에 있는지 확인 (약간 확장된 영역)
+    /// </summary>
     private bool IsMouseInChartArea()
     {
         if (chartArea == null) return false;
@@ -431,7 +389,7 @@ internal class DetailToxinBar : MonoBehaviour
         if (!ok) return false;
 
         Rect expanded = chartArea.rect;
-        expanded.xMax += 30;
+        expanded.xMax += 30; // 오른쪽 여백 확장
         return expanded.Contains(localMousePos);
     }
 
@@ -464,7 +422,9 @@ internal class DetailToxinBar : MonoBehaviour
         }
     }
 
-
+    /// <summary>
+    /// 마우스 위치에서 가장 가까운 데이터 포인트 찾기
+    /// </summary>
     private int FindClosestDataPoint(Vector2 mousePos)
     {
         float minDistance = float.MaxValue;
@@ -473,7 +433,6 @@ internal class DetailToxinBar : MonoBehaviour
         for (int i = 0; i < originalValues.Count; i++)
         {
             Vector2 pointPos = ConvertChartToLocalPosition(i, originalValues[i]);
-            //Debug.Log($"📊 데이터포인트 {i} Y: {pointPos.y}, 값: {originalValues[i]}");
             float distance = Vector2.Distance(mousePos, pointPos);
 
             if (distance < 20f && distance < minDistance)
@@ -486,18 +445,18 @@ internal class DetailToxinBar : MonoBehaviour
         return closestIndex;
     }
 
+    /// <summary>
+    /// 데이터 포인트를 차트 로컬 좌표로 변환
+    /// </summary>
     private Vector2 ConvertChartToLocalPosition(int index, float value)
     {
         Rect chartRect = chartArea.rect;
 
-        // 인덱스를 0~1 범위로 정규화
         float normalizedIndex = (originalValues.Count > 1) ?
             (float)index / (originalValues.Count - 1) : 0f;
 
-        // 값을 0~1 범위로 정규화 (음수 방지)
-        //float maxValue = Mathf.Max(originalValues.Max(), toxinData.warning);
         float maxValue = originalValues.Max();
-        float minValue = Mathf.Min(originalValues.Min(), 0f); // 최소값도 고려
+        float minValue = Mathf.Min(originalValues.Min(), 0f);
 
         float normalizedValue;
         if (maxValue > minValue)
@@ -509,21 +468,17 @@ internal class DetailToxinBar : MonoBehaviour
             normalizedValue = 0f;
         }
 
-        // 0~1 범위로 클램핑
         normalizedValue = Mathf.Clamp01(normalizedValue);
 
-        // 실제 픽셀 위치 계산
         float xPos = chartRect.xMin + chartRect.width * normalizedIndex;
         float yPos = chartRect.yMin + chartRect.height * normalizedValue;
 
-        // 디버깅 로그 추가
-       /* Debug.Log($"노드 {index}: value={value:F2}, normalizedValue={normalizedValue:F3}, " +
-                 $"maxValue={maxValue:F2}, minValue={minValue:F2}, yPos={yPos:F2}");*/
-
-        Vector2 result = new Vector2(xPos, yPos);
-        return result;
+        return new Vector2(xPos, yPos);
     }
 
+    /// <summary>
+    /// 툴팁 표시 - 시간과 값 정보
+    /// </summary>
     private void ShowTooltip(int index, Vector3 _)
     {
         if (tooltip == null) return;
@@ -550,39 +505,30 @@ internal class DetailToxinBar : MonoBehaviour
         if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
             canvas.transform as RectTransform, screenPos, canvas.worldCamera, out local))
         {
-            // 기존 보정 그대로 유지
+            // 툴팁 위치 조정
             local.y += tip.sizeDelta.y / 2 + 60;
             local.x -= (index >= originalValues.Count - 4) ? 400 : 350;
             tip.anchoredPosition = local;
         }
     }
 
-
     private void HideTooltip()
     {
         tooltip.SetActive(false);
     }
 
+    /// <summary>
+    /// 인덱스에 해당하는 실제 DB 시간 반환
+    /// </summary>
     private DateTime GetTimeForIndex(int index)
     {
-        // toxinData에 저장된 실제 시간 직접 사용
         if (toxinData?.dateTimes != null &&
             index >= 0 && index < toxinData.dateTimes.Count)
         {
-            DateTime actualTime = toxinData.dateTimes[index];
-            //Debug.Log($"🕒 툴팁 실제 DB 시간: {actualTime:yyyy-MM-dd HH:mm:ss}");
-            return actualTime;
+            return toxinData.dateTimes[index];
         }
 
-        return DateTime.Now; // 간단한 기본값
-        /*  DateTime endTime = DateTime.Now;
-          DateTime startTime = endTime.AddHours(-12);
-          double intervalMinutes = (endTime - startTime).TotalMinutes / (originalValues.Count - 1);
-
-          return startTime.AddMinutes(intervalMinutes * index);*/
+        return DateTime.Now; // 기본값
     }
     #endregion
-
-
 }
-

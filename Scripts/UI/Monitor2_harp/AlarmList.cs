@@ -392,6 +392,7 @@ public class AlarmList : MonoBehaviour
         OnClickOrder(AlramOrder.TIME_UP.ToString());
     }
 
+    //이부분 수정해야함!
     public void OnClickOrder(string order)
     {
         // 정렬 전 DateTime 값들 확인

@@ -152,58 +152,6 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     //List<float> seps = new();
     DateTime pastTimestamp = DateTime.Now;
-    /*void GetAlarmChangedProcess()
-    {
-        DateTime newTimestamp = DateTime.Now;
-        //DateTime TEST_DT;
-
-        //Debug.Log("CHECKTIME Request start :" + DateTime.Now.ToString("ss.fff"));
-        //TEST_DT = DateTime.Now;
-        dbManager.GetAlarmLogsChangedInRange(pastTimestamp, newTimestamp, changedList =>
-        {
-            //seps.Add((float)(DateTime.Now - TEST_DT).TotalSeconds);
-            //float variance = seps.Select(v => (v - seps.Average()) * (v - seps.Average())).Average();
-            //float stdDev = (float)Math.Sqrt(variance);
-
-            changedList = changedList.OrderBy(x => x.alacode).ToList();
-
-            //변경사항들을 신규 알람과 해제된 알람으로 구분
-            List<AlarmLogModel> toAddModels = changedList.Where(changed => Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
-
-            //해제된 알람 유지하기위해 주석처리함
-            //List<AlarmLogModel> toRemoveModels = changedList.Where(changed => changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
-
-            //신규 알람을 파싱한 뒤 리스트에 추가
-            logDataList.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
-
-            //해제된 알람의 idx를 가진 로그데이터들을 제거->>> 해제된 알람 유지를 위한 주석처리
-            *//*IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
-            logDataList.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));*//*
-
-            DateTime oneWeekAgo = DateTime.Now.AddDays(-7);
-            int removedOldCount = logDataList.RemoveAll(logData => logData.time < oneWeekAgo);
-
-            pastTimestamp = newTimestamp;
-
-
-            //알람 로그 리스트에 변화가 발생 시
-            if (changedList.Count != 0)
-            {
-                Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 발생했습니다 \n" +
-                    $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
-
-                //ChangeAlarmList 이벤트
-                uiManager.Invoke(UiEventType.ChangeAlarmList);
-            }
-            else
-            {
-                Debug.Log($"ModelManager - GetAlarmChangedProcess : 알람 로그 리스트에 변화가 없습니다.\n" +
-                    $"신규 : {toAddModels.Count} 오래된알람제거 : {removedOldCount} 현재 : {logDataList.Count}");
-            }
-        });
-
-        DOVirtual.DelayedCall(6, GetAlarmChangedProcess);
-    }*/
     void GetAlarmChangedProcess()
     {
         DateTime newTimestamp = DateTime.Now;
@@ -234,7 +182,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             pastTimestamp = newTimestamp;
 
-            // 🔴 개선: 센서값과 상태를 한번에 업데이트
+            // 센서값과 상태를 한번에 업데이트
             if (currentObsId > 0)
             {
                 dbManager.GetToxinValueLast(currentObsId, currents =>
@@ -245,7 +193,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
                         if (curr != null)
                         {
-                            // ✨ UpdateValue 내부에서 상태도 함께 계산
+                            //  UpdateValue 내부에서 상태도 함께 계산
                             toxin.UpdateValue(curr);  // ToxinData.UpdateValue()가 상태도 설정
                         }
                     });
@@ -267,7 +215,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         }
                     });
 
-                    // 🔴 개선: 하나의 이벤트로 통합
+                    // 개선: 하나의 이벤트로 통합
                     uiManager.Invoke(UiEventType.ChangeSensorStatus);  // 통합 이벤트
                 });
             }
@@ -334,90 +282,6 @@ public class ModelManager : MonoBehaviour, ModelProvider
         });
 
     }
-
-    /*private void OnNavigateObs(object obj)
-    {
-        if (obj is not int obsId) return;
-
-        currentObsId = obsId;
-
-        dbManager.GetToxinData(obsId, toxins =>
-        {
-            DateTime endTime = Option.ENABLE_DEBUG_CODE ? DateTime.Now.AddDays(20) : DateTime.Now;
-            DateTime startTime = endTime.AddDays(-1);
-
-            dbManager.GetChartValue(obsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
-            {
-                toxins.ForEach(model =>
-                {
-                    if (chartDatas.Count <= 0) Debug.LogWarning("OnNavigateObs : 얻은 데이터의 원소 수가 0입니다. 차트를 정상적으로 표시할 수 없습니다. \nDB에 존재하지 않는 값이나 잘못된 범위를 지정했습니다.");
-
-                    var values = chartDatas
-                        .Where(t => t.boardidx == model.boardid && t.hnsidx == model.hnsid)
-                        .Select(t => t.val).ToList();
-
-                    int nodeCount = (int)((endTime - startTime) / TimeSpan.FromMinutes(Option.TREND_TIME_INTERVAL));
-
-                    while (values.Count < nodeCount)
-                        values.Insert(0, 0f);
-
-                    model.values = values;
-                });
-
-                // 추가: 실시간 값도 즉시 가져오기
-                dbManager.GetToxinValueLast(obsId, currents =>
-                {
-                    foreach (ToxinData toxin in toxins)
-                    {
-                        CurrentDataModel current = currents.FirstOrDefault(c =>
-                            c.boardidx == toxin.boardid && c.hnsidx == toxin.hnsid);
-
-                        if (current != null)
-                        {
-                            toxin.UpdateValue(current); // 실시간 값 추가
-                            Debug.Log($"초기 실시간 값 설정: 보드{toxin.boardid} 센서{toxin.hnsid} {toxin.hnsName} = {current.val}");
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"초기 실시간 값 없음: 보드{toxin.boardid} 센서{toxin.hnsid} {toxin.hnsName}");
-                        }
-                    }
-
-                    // 알람 상태 반영
-                    logDataList.Where(t => t.obsId == obsId).ToList().ForEach(ala =>
-                    {
-                        if (ala.status == 0)
-                        {
-                            toxins
-                            .Where(t => t.boardid == ala.boardId && t.status != ToxinStatus.Red).ToList()
-                            .ForEach(t => t.status = ToxinStatus.Yellow);
-                        }
-                        else
-                        {
-                            toxins
-                            .FirstOrDefault(t => t.boardid == ala.boardId && t.hnsid == ala.hnsId)
-                            .status = ToxinStatus.Red;
-                        }
-                    });
-
-                    currentObsId = obsId;
-
-                    this.toxins.Clear();
-                    this.toxins.AddRange(toxins);
-
-                    // UI 업데이트
-                    UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
-                    UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
-
-                    var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
-                    if (defaultSensor != null)
-                    {
-                        UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (defaultSensor.boardid, defaultSensor.hnsid));
-                    }
-                });
-            });
-        });
-    }*/
     
     private DateTime currentChartEndTime;
     private void OnNavigateObs(object obj)
@@ -1108,21 +972,6 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
     public AreaData GetAreaByName(string areaName) => areas.Find(area => area.areaName == areaName);
 
-    /*public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
-    {
-        ToxinStatus highestStatus = ToxinStatus.Green;
-
-        // 알람 기록만 체크 (이제 활성 알람만 나올 것)
-        List<LogData> sensorLogs = GetAlarms().FindAll(log =>
-            log.hnsId == hnsId && log.obsId == obsId && log.boardId == boardId);
-
-        sensorLogs.ForEach(log => {
-            ToxinStatus logStatus = log.status != 0 ? (ToxinStatus)log.status : ToxinStatus.Purple;
-            highestStatus = (ToxinStatus)Math.Max((int)highestStatus, (int)logStatus);
-        });
-
-        return highestStatus;
-    }*/
     public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId)
     {
         ToxinStatus highestStatus = ToxinStatus.Green;

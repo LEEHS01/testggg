@@ -35,9 +35,7 @@ internal class ArcBar : MonoBehaviour
 
         Transform dashboard = transform.Find("Dashboard");
         arc = dashboard.Find("Progress").GetComponent<Image>();
-        //txtProgress = dashboard.Find("Progress_Value").GetComponent<TMP_Text>();
-        //txtMin = dashboard.Find("Min").GetComponent<TMP_Text>();
-        //txtMax = dashboard.Find("Max").GetComponent<TMP_Text>();
+
         txtName = transform.Find("Text_DataItem").GetComponent<TMP_Text>();
         txtUnit = transform.Find("Text_DataUnit").GetComponent<TMP_Text>();
         txtCurrent = transform.Find("Text_DataValue").GetComponent<TMP_Text>();
@@ -55,15 +53,12 @@ internal class ArcBar : MonoBehaviour
 
     public void SetValue(ToxinData toxin)
     {
-        //Debug.LogError($"toxin3 : {toxin.hnsName} {toxin.on} {toxin.fix}");
         gameObject.SetActive(toxin.on);
         data = toxin;
 
         txtName.text = toxin.hnsName;
         txtUnit.text = toxin.unit ?? "";  //단위 설정
-        //txtCurrent.text = 0;
-        //txtMin.text = "0";
-        //txtMax.text = toxin.warning.ToString();
+
 
         DATA_NAME = toxin.hnsName.ToString();
         DATA_USE = toxin.on;

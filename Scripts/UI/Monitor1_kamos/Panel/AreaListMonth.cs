@@ -53,7 +53,7 @@ public class AreaListMonth : MonoBehaviour
         alarmMonthlyList = alarmMonthlyList.OrderByDescending(item => item.count).ToList().GetRange(0, 5);
 
         //상위 5개 지역의 알람 총계를 산출
-        int sum = alarmMonthlyList.Sum(item => item.count);
+        int sum = Math.Max(alarmMonthlyList.Sum(item => item.count), 1);
 
         //AreaListMonthItem 업데이트
         for (int i = 0; i < items.Count; i++)

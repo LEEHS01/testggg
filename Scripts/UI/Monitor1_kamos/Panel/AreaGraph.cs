@@ -111,43 +111,6 @@ public class AreaGraph : MonoBehaviour
     }
 
 
-
-    /* private void OnChangeSummary(object obj)
-     {
-         //초기화
-         foreach (Transform histo in histograms)
-             foreach(Transform bar in histo)
-                 bar.DOScaleY(0f, 0.5f);
-
-
-         //값 넣기
-         List<AlarmSummaryModel> summarys= modelProvider.GetAlarmSummary();
-
-         if (summarys.Count == 0) return;
-
-         int maxValue = summarys.Max(summary => summary.cnt);
-
-         for (int i = lblValues.Count - 1; i >= 0; i--)
-             lblValues[i].text = "" +  Mathf.RoundToInt((float)maxValue * i / (lblValues.Count - 1));
-
-         foreach (AlarmSummaryModel summary in summarys) 
-         {
-             Transform tHistogram = histograms[summary.month + 1];
-             Transform tBar;
-             if (summary.obsidx == obssInArea[0].id)
-                 tBar = tHistogram.Find("Histogram05_Turquoise");
-             else if (summary.obsidx == obssInArea[1].id)
-                 tBar = tHistogram.Find("Histogram05_Orange");
-             else if (summary.obsidx == obssInArea[2].id)
-                 tBar = tHistogram.Find("Histogram05_Green");
-             else throw new Exception("AreaGraph - OnChangeSummary : Summary 내의 정보가 지역 내 관측소들과 일치하지 않습니다. 잘못된 데이터가 입력됐습니다.");
-
-             tBar.DOScaleY((float)summary.cnt / maxValue, 0.5f);
-             //tBar.localScale = new Vector3(1f, , 1f);
-         }
-
-     }*/
-
     private void OnNavigateArea(object obj)
     {
         //this.gameObject.SetActive(false);

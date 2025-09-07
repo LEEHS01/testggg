@@ -22,23 +22,6 @@ namespace Onthesys
         public int yellow;
         public int purple;//수정한 부분
 
-        /*
-        public void CreateAlramDatas()
-        {
-            this.green = Random.Range(0, 4);
-            this.red = Random.Range(0, 2);
-            this.yellow = Random.Range(0, 2);
-            this.purple = Random.Range(0, 2);//수정한 부분
-        }
-
-        public void UpdateAlramDatas()
-        {
-            this.green = Random.Range(0, 4);
-            this.red = Random.Range(0, 2);
-            this.yellow = Random.Range(0, 2);
-            this.purple = Random.Range(0, 2);//수정한 부분
-        }
-        */
         public int GetRedYellow()
         {
             return this.red + this.yellow;

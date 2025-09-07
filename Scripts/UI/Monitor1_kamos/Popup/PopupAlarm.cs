@@ -12,20 +12,23 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public class PopupAlarm : MonoBehaviour 
+/// <summary>
+/// 알람 팝업 - 신규 알람 발생시 사용자에게 즉시 알림
+/// </summary>
+public class PopupAlarm : MonoBehaviour
 {
     ModelProvider modelProvider => UiManager.Instance.modelProvider;
 
     Button btnClose, btnAlarmTransition;
     Image imgSignalLamp, imgSignalLight, imgIcon;
-    TMP_Text lblTitle, lblSummary;//, lblAwareTransition;
+    TMP_Text lblTitle, lblSummary;
 
-    Tween intervalThread;
+    Tween intervalThread; // 1분마다 경과시간 업데이트용 타이머
 
-    List<LogData> previousLogs = new();
-    LogData alarmLog = null;
-    int passMins = 0;
-    const float intervalValue = 60f;    //60f = 1min
+    List<LogData> previousLogs = new(); // 이전 알람 목록 (신규 알람 감지용)
+    LogData alarmLog = null; // 현재 표시중인 알람
+    int passMins = 0; // 알람 발생 후 경과 시간(분)
+    const float intervalValue = 60f; // 1분 = 60초
 
     static Dictionary<ToxinStatus, String> statusSpriteDic = new();
     static Dictionary<ToxinStatus, Color> statusColorDic = new();
@@ -44,13 +47,13 @@ public class PopupAlarm : MonoBehaviour
             if (ColorUtility.TryParseHtmlString(htmlString: pair.Value, out color))
                 statusColorDic[pair.Key] = color;
 
+        // 상태별 아이콘 경로
         statusSpriteDic = new()
         {
-            {ToxinStatus.Yellow,   "Image/ErrorIcon/Serious"},
-            {ToxinStatus.Red,      "Image/ErrorIcon/Warning"},
-            {ToxinStatus.Purple,   "Image/ErrorIcon/Malfunction"},
+            {ToxinStatus.Yellow,   "Image/ErrorIcon/Serious"},     // 경계
+            {ToxinStatus.Red,      "Image/ErrorIcon/Warning"},     // 경보
+            {ToxinStatus.Purple,   "Image/ErrorIcon/Malfunction"}, // 설비이상
         };
-
     }
 
     private void Start()
@@ -68,8 +71,6 @@ public class PopupAlarm : MonoBehaviour
         btnAlarmTransition.onClick.AddListener(OnClickAlarmTransition);
 
         lblSummary = transform.Find("lblSummary").GetComponent<TMP_Text>();
-        //lblAwareTransition = transform.Find("lblAwareTransition").GetComponent<TMP_Text>();
-
         imgIcon = transform.Find("imgIcon").GetComponent<Image>();
 
         UiManager.Instance.Register(UiEventType.ChangeAlarmList, OnChangeAlarmList);
@@ -83,6 +84,9 @@ public class PopupAlarm : MonoBehaviour
         previousLogs = new(modelProvider.GetActiveAlarms());
     }
 
+    /// <summary>
+    /// 알람 목록 변경시 신규 알람 감지 및 팝업 표시
+    /// </summary>
     void OnChangeAlarmList(object obj)
     {
         List<LogData> rawLogDatas, newLogDatas;
@@ -93,49 +97,60 @@ public class PopupAlarm : MonoBehaviour
         Debug.Log($"이전 알람 개수: {previousLogs.Count}");
         Debug.Log($"현재 알람 개수: {rawLogDatas.Count}");
 
-        // ✅ Contains 체크 로그
+        // Contains 체크 로그
         foreach (var current in rawLogDatas)
         {
             bool exists = previousLogs.Contains(current);
             Debug.Log($"알람 {current.idx}({current.hnsName}): 이전에 있었나? {exists}");
         }
 
+        // 신규 알람만 필터링 (이전에 없던 알람)
         newLogDatas = rawLogDatas.Where(item => !previousLogs.Contains(item)).ToList();
         Debug.Log($"신규 알람: {newLogDatas.Count}개");
 
+        // 최신 신규 알람부터 역순으로 검사하여 팝업 표시
         for (int i = newLogDatas.Count - 1; i >= 0; i--)
             if (InitAlarmLog(newLogDatas[i])) break;
 
         previousLogs = new(rawLogDatas);
     }
 
+    /// <summary>
+    /// 알람 팝업 초기화 및 표시 여부 결정
+    /// </summary>
+    /// <param name="data">표시할 알람 데이터</param>
+    /// <returns>팝업이 표시되었으면 true</returns>
     public bool InitAlarmLog(LogData data)
     {
-        ToxinStatus logStatus = data.status == 0? ToxinStatus.Purple : (ToxinStatus)data.status;
+        ToxinStatus logStatus = data.status == 0 ? ToxinStatus.Purple : (ToxinStatus)data.status;
 
+        // 알람 임계값보다 낮으면 팝업 표시 안함
         if (logStatus <= Option.alarmThreshold) return false;
 
+        // 이미 표시중인 알람과 동일하면 무시
         if (this.alarmLog == data) return false;
 
         passMins = 0;
         alarmLog = data;
         IntervalUpdateView();
 
+        // 기존 타이머 중지 후 새 타이머 시작 (1분마다 경과시간 업데이트)
         intervalThread?.Kill();
-        intervalThread = DOVirtual.DelayedCall(intervalValue,IntervalUpdateView).SetUpdate(true);
+        intervalThread = DOVirtual.DelayedCall(intervalValue, IntervalUpdateView).SetUpdate(true);
         intervalThread.SetLoops(-1, LoopType.Restart);
-
-        //gameObject.SetActive(false);
 
         gameObject.SetActive(true);
         return true;
     }
 
+    /// <summary>
+    /// 1분마다 호출 - 경과시간 업데이트 및 알람 정보 표시
+    /// </summary>
     void IntervalUpdateView()
     {
         passMins++;
 
-        //lblSummary 설정
+        // 경과시간 계산 및 표시
         {
             DateTime logDt = alarmLog.time;
             string passTimeString = "#ERROR!";
@@ -156,6 +171,7 @@ public class PopupAlarm : MonoBehaviour
                 $"발생 지점 : {alarmLog.areaName} - {alarmLog.obsName}\n" +
                 $"발생 시각 : {logDt:yy/MM/dd HH:mm}({passTimeString} 전)\n\n";
 
+            // 설비이상과 센서 알람 구분 표시
             if ((ToxinStatus)alarmLog.status == ToxinStatus.Purple)
             {
                 lblSummary.text +=
@@ -169,8 +185,8 @@ public class PopupAlarm : MonoBehaviour
             }
         }
 
+        // 상태별 제목 및 색상 설정
         ToxinStatus logStatus = alarmLog.status == 0 ? ToxinStatus.Purple : (ToxinStatus)alarmLog.status;
-        //alacode에 맞게 lblTitle, imgSignalLamp 변경
         switch (logStatus)
         {
             case ToxinStatus.Purple: //설비이상
@@ -189,13 +205,16 @@ public class PopupAlarm : MonoBehaviour
         imgIcon.sprite = Resources.Load<Sprite>(statusSpriteDic[logStatus]);
     }
 
-
+    /// <summary>
+    /// 알람 위치로 이동 - 해당 관측소 화면으로 전환
+    /// </summary>
     private void OnClickAlarmTransition()
     {
         UiManager.Instance.Invoke(UiEventType.SelectAlarm, alarmLog);
         UiManager.Instance.Invoke(UiEventType.NavigateObs, alarmLog.obsId);
         OnCloseAlarm();
     }
+
     private void OnCloseAlarm()
     {
         gameObject.SetActive(false);
