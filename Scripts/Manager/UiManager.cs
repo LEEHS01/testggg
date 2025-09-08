@@ -15,7 +15,29 @@ using static UiManager;
 
 public class UiManager : MonoBehaviour
 {
-    public ModelProvider modelProvider => ModelManager.Instance;
+    [Header("데이터 제공자 설정")]
+    [SerializeField] private bool useDummyData = true;  // Inspector에서 설정 가능
+
+    private ModelProvider _modelProvider;
+    public ModelProvider modelProvider
+    {
+        get
+        {
+            if (_modelProvider == null)
+            {
+                // 강제로 더미데이터만 사용하도록 수정
+                var dummyProvider = GetComponent<DummyDataProvider>();
+                if (dummyProvider == null)
+                {
+                    dummyProvider = gameObject.AddComponent<DummyDataProvider>();
+                }
+                _modelProvider = dummyProvider;
+                Debug.Log("[UiManager] 더미 데이터 프로바이더 강제 사용");
+            }
+            return _modelProvider;
+        }
+    }
+    //public ModelProvider modelProvider => ModelManager.Instance;
 
     public static UiManager Instance = null;
     private void Awake()
