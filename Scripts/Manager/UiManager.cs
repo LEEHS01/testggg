@@ -25,14 +25,32 @@ public class UiManager : MonoBehaviour
         {
             if (_modelProvider == null)
             {
-                // 강제로 더미데이터만 사용하도록 수정
-                var dummyProvider = GetComponent<DummyDataProvider>();
-                if (dummyProvider == null)
+                // useDummyData 플래그에 따라 데이터 제공자를 선택하도록 수정
+                if (useDummyData)
                 {
-                    dummyProvider = gameObject.AddComponent<DummyDataProvider>();
+                    _modelProvider = GetComponent<DummyDataProvider>();
+                    if (_modelProvider == null)
+                    {
+                        Debug.LogError("[UiManager] DummyDataProvider 컴포넌트를 찾을 수 없습니다.");
+                    }
                 }
-                _modelProvider = dummyProvider;
-                Debug.Log("[UiManager] 더미 데이터 프로바이더 강제 사용");
+                else
+                {
+                    _modelProvider = GetComponent<ModelManager>();
+                    if (_modelProvider == null)
+                    {
+                        Debug.LogError("[UiManager] ModelManager 컴포넌트를 찾을 수 없습니다.");
+                    }
+                }
+
+                if (_modelProvider != null)
+                {
+                    Debug.Log($"[UiManager] {_modelProvider.GetType().Name} 사용");
+                }
+                else
+                {
+                    Debug.LogError("[UiManager] Model Provider가 설정되지 않았습니다. useDummyData 설정을 확인하세요.");
+                }
             }
             return _modelProvider;
         }

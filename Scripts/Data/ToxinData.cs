@@ -48,7 +48,7 @@ namespace Onthesys
             this.values = new List<float>();
             this.aiValues = new List<float>();
             this.diffValues = new List<float>();
-            this.unit = unit;  //단위 설정
+            this.unit = model.unit;  //단위 설정
             this.stcd = "00"; // 기본값: 정상
         }
 
