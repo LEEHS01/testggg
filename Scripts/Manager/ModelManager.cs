@@ -217,7 +217,6 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
                     // 개선: 하나의 이벤트로 통합
                     uiManager.Invoke(UiEventType.ChangeSensorStatus);  // 통합 이벤트
-                    uiManager.Invoke(UiEventType.ChangeAlarmMap);      // 지도 상태 업데이트
                 });
             }
 

@@ -69,7 +69,7 @@ namespace Onthesys
                 {
                     if (model.val >= model.hihi)
                         this.status = ToxinStatus.Red;
-                    else if (model.val >= model.hi)
+                    else if (model.val > model.hi)
                         this.status = ToxinStatus.Yellow;
                     else
                         this.status = ToxinStatus.Green;
