@@ -15,7 +15,47 @@ using static UiManager;
 
 public class UiManager : MonoBehaviour
 {
-    public ModelProvider modelProvider => ModelManager.Instance;
+    [Header("데이터 제공자 설정")]
+    [SerializeField] public bool useDummyData = true;  // Inspector에서 설정 가능
+
+    private ModelProvider _modelProvider;
+    public ModelProvider modelProvider
+    {
+        get
+        {
+            if (_modelProvider == null)
+            {
+                // useDummyData 플래그에 따라 데이터 제공자를 선택하도록 수정
+                if (useDummyData)
+                {
+                    _modelProvider = GetComponent<DummyDataProvider>();
+                    if (_modelProvider == null)
+                    {
+                        Debug.LogError("[UiManager] DummyDataProvider 컴포넌트를 찾을 수 없습니다.");
+                    }
+                }
+                else
+                {
+                    _modelProvider = GetComponent<ModelManager>();
+                    if (_modelProvider == null)
+                    {
+                        Debug.LogError("[UiManager] ModelManager 컴포넌트를 찾을 수 없습니다.");
+                    }
+                }
+
+                if (_modelProvider != null)
+                {
+                    Debug.Log($"[UiManager] {_modelProvider.GetType().Name} 사용");
+                }
+                else
+                {
+                    Debug.LogError("[UiManager] Model Provider가 설정되지 않았습니다. useDummyData 설정을 확인하세요.");
+                }
+            }
+            return _modelProvider;
+        }
+    }
+    //public ModelProvider modelProvider => ModelManager.Instance;
 
     public static UiManager Instance = null;
     private void Awake()

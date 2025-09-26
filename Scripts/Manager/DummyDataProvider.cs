@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 using Onthesys;
+using System.Collections;
 
 /// <summary>
 /// 최소한의 더미 데이터 제공자 - 컴파일 에러 없이 UI만 확인
@@ -11,6 +12,7 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
 {
     private List<ToxinData> dummyToxinData = new List<ToxinData>();
     private List<LogData> dummyAlarmData = new List<LogData>();
+    private int currentObsId = 11; // 현재 선택된 관측소
 
     void Awake()
     {
@@ -20,30 +22,232 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
         CreateDummyAlarmData();
         Debug.Log("더미 데이터 프로바이더 활성화됨");
 
-        // 더미 데이터 초기화 완료 후 Initiate 이벤트를 직접 호출
-        UiManager.Instance.Invoke(UiEventType.Initiate);
+        // 관측소 선택 이벤트 등록
+        UiManager.Instance.Register(UiEventType.NavigateObs, OnNavigateObs);
+        // 알람 선택 이벤트 등록 추가
+        UiManager.Instance.Register(UiEventType.SelectAlarm, OnSelectAlarm);
+
+        // ModelManager와 동일하게 모든 이벤트 호출
+        StartCoroutine(InitializeAllEvents());
+
+        StartCoroutine(BlinkingEffect());
+
+        StartCoroutine(CycleSensorSteps());
     }
 
-    void Start()
+    private IEnumerator InitializeAllEvents()
     {
-        Debug.Log("더미 데이터 프로바이더 활성화됨");
+        yield return null; // 한 프레임 대기
+
+        // ModelManager가 호출하는 모든 이벤트들을 동일하게 호출
+        UiManager.Instance.Invoke(UiEventType.Initiate);
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmList);
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmMonthly);
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmYearly);
+        UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
+        UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
+        UiManager.Instance.Invoke(UiEventType.ChangeSensorStatus);
+        UiManager.Instance.Invoke(UiEventType.ChangeSummary);
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmMap);
+        //UiManager.Instance.Invoke(UiEventType.ChangeSensorStep, 5);
+        UiManager.Instance.Invoke(UiEventType.ChangeSettingSensorList);
+        UiManager.Instance.Invoke(UiEventType.SelectCurrentSensor, (1, 1));
+
+        Debug.Log("더미 데이터 - 모든 이벤트 호출 완료");
     }
 
-    // 지역 데이터 (기존 유지)
-    // 지역 데이터 (발전소 타입 추가)
+    private IEnumerator BlinkingEffect()
+    {
+        while (true)
+        {
+            yield return new WaitForSeconds(1.0f); // 1초마다
+
+            // 알람이 있는 센서들에 대해 깜박임 이벤트 발생
+            if (dummyAlarmData.Count > 0)
+            {
+                UiManager.Instance.Invoke(UiEventType.ChangeSensorStatus);
+            }
+        }
+    }
+
+    // 관측소 선택 이벤트 처리
+    private void OnNavigateObs(object obj)
+    {
+        if (obj is int obsId)
+        {
+            currentObsId = obsId;
+            AdjustSensorValuesForCurrentObs();
+            UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
+            UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
+            UiManager.Instance.Invoke(UiEventType.ChangeSettingSensorList);
+        }
+    }
+
+    // ✅ 알람 선택 이벤트 처리 추가
+    private void OnSelectAlarm(object obj)
+    {
+        if (obj is int logIdx)
+        {
+            // 선택된 알람에 해당하는 관측소로 이동
+            LogData selectedLog = dummyAlarmData.FirstOrDefault(log => log.idx == logIdx);
+            if (selectedLog != null)
+            {
+                currentObsId = selectedLog.obsId;
+                AdjustSensorValuesForCurrentObs();
+
+                // ✅ 즉시 여러 이벤트를 순차적으로 발생 (초기화 완료 보장)
+                StartCoroutine(InitializeAlarmSelection());
+            }
+        }
+    }
+
+    // ✅ 알람 선택 시 순차적 초기화
+    private IEnumerator InitializeAlarmSelection()
+    {
+        // 한 프레임 대기
+        yield return null;
+
+        // 센서 리스트 먼저 업데이트
+        UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
+
+        // 한 프레임 더 대기
+        yield return null;
+
+        // 알람 센서 리스트 업데이트 (ToxinList2가 기다리는 이벤트)
+        UiManager.Instance.Invoke(UiEventType.ChangeAlarmSensorList);
+
+        // 트렌드 라인도 업데이트
+        UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
+    }
+
+    // 현재 관측소에 맞게 센서 값 조정
+    private void AdjustSensorValuesForCurrentObs()
+    {
+        var tempSensor = dummyToxinData.FirstOrDefault(t => t.boardid == 3 && t.hnsid == 1); // Temperature
+        var bodSensor = dummyToxinData.FirstOrDefault(t => t.boardid == 3 && t.hnsid == 3);   // BOD
+        var toxinSensor = dummyToxinData.FirstOrDefault(t => t.boardid == 1 && t.hnsid == 1); // 독성도
+
+        // 모든 센서 기본값으로 초기화
+        ResetAllSensorsToNormal();
+
+        if (currentObsId == 11) // 인천 지역1 - Temperature 경보
+        {
+            if (tempSensor != null)
+            {
+                for (int i = 0; i < tempSensor.values.Count; i++)
+                    tempSensor.values[i] = UnityEngine.Random.Range(600f, 650f);
+                tempSensor.status = ToxinStatus.Red;
+            }
+        }
+        else if (currentObsId == 12) // 인천 지역2 - BOD 경계
+        {
+            if (bodSensor != null)
+            {
+                for (int i = 0; i < bodSensor.values.Count; i++)
+                    bodSensor.values[i] = UnityEngine.Random.Range(70f, 80f);
+                bodSensor.status = ToxinStatus.Yellow;
+            }
+        }
+        else if (currentObsId == 21) // 평택/대산 지역1 - 독성도 설비이상
+        {
+            if (toxinSensor != null)
+            {
+                // ✅ 독성도 설비이상 시에도 0 (측정 불가)
+                for (int i = 0; i < toxinSensor.values.Count; i++)
+                    toxinSensor.values[i] = 0.0f;
+                toxinSensor.status = ToxinStatus.Purple;
+            }
+        }
+    }
+    private IEnumerator CycleSensorSteps()
+    {
+        yield return new WaitForSeconds(3.0f);
+        int currentStep = 1;
+
+        while (true)
+        {
+            // X-Ray 상태 체크 추가
+            if (currentObsId > 0 && IsXrayFullyActive())
+            {
+                UiManager.Instance.Invoke(UiEventType.ChangeSensorStep, currentStep);
+                currentStep++;
+                if (currentStep > 5) currentStep = 1;
+            }
+
+            yield return new WaitForSeconds(10.0f);
+        }
+    }
+    private bool IsXrayFullyActive()
+    {
+        // TitleXrayButton의 static 변수들을 리플렉션으로 접근
+        try
+        {
+            var titleXrayType = System.Type.GetType("TitleXrayButton");
+            if (titleXrayType != null)
+            {
+                var structureField = titleXrayType.GetField("isStructureXrayActive",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+                var equipmentField = titleXrayType.GetField("isEquipmentXrayActive",
+                    System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+                if (structureField != null && equipmentField != null)
+                {
+                    bool structureActive = (bool)structureField.GetValue(null);
+                    bool equipmentActive = (bool)equipmentField.GetValue(null);
+
+                    Debug.Log($"Structure X-Ray: {structureActive}, Equipment X-Ray: {equipmentActive}");
+                    return structureActive && equipmentActive;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.LogError($"TitleXrayButton static 변수 접근 실패: {ex.Message}");
+        }
+
+        return false;
+    }
+
+    // 모든 센서를 정상 상태로 초기화
+    private void ResetAllSensorsToNormal()
+    {
+        foreach (var toxin in dummyToxinData)
+        {
+            if (toxin.boardid == 1 && toxin.hnsid == 1) // 독성도
+            {
+                // ✅ 독성도는 정상일 때 무조건 0
+                for (int i = 0; i < toxin.values.Count; i++)
+                    toxin.values[i] = 0.0f;
+            }
+            else if (toxin.boardid == 3 && toxin.hnsid == 1) // Temperature
+            {
+                for (int i = 0; i < toxin.values.Count; i++)
+                    toxin.values[i] = UnityEngine.Random.Range(0.4f, 0.5f);
+            }
+            else if (toxin.boardid == 3 && toxin.hnsid == 3) // BOD
+            {
+                for (int i = 0; i < toxin.values.Count; i++)
+                    toxin.values[i] = UnityEngine.Random.Range(0.4f, 0.5f);
+            }
+
+            toxin.status = ToxinStatus.Green; // 모든 센서 정상 상태로
+        }
+    }
+
+    // 지역 데이터
     public List<AreaData> GetAreas() => new List<AreaData>
-{
-    new AreaData { areaId = 1, areaName = "인천", areaType = AreaData.AreaType.Ocean },
-    new AreaData { areaId = 2, areaName = "평택/대산", areaType = AreaData.AreaType.Ocean },
-    new AreaData { areaId = 3, areaName = "고려 원자력", areaType = AreaData.AreaType.Nuclear },
-    new AreaData { areaId = 4, areaName = "동해 화력", areaType = AreaData.AreaType.Nuclear },
-    new AreaData { areaId = 5, areaName = "보령 화력", areaType = AreaData.AreaType.Nuclear },
-    new AreaData { areaId = 6, areaName = "부산", areaType = AreaData.AreaType.Ocean },
-    new AreaData { areaId = 7, areaName = "사천 화력", areaType = AreaData.AreaType.Nuclear },
-    new AreaData { areaId = 8, areaName = "여수/광양", areaType = AreaData.AreaType.Ocean },
-    new AreaData { areaId = 9, areaName = "영광 원자력", areaType = AreaData.AreaType.Nuclear },
-    new AreaData { areaId = 10, areaName = "울산", areaType = AreaData.AreaType.Ocean }
-};
+    {
+        new AreaData { areaId = 1, areaName = "인천", areaType = AreaData.AreaType.Ocean },
+        new AreaData { areaId = 2, areaName = "평택/대산", areaType = AreaData.AreaType.Ocean },
+        new AreaData { areaId = 3, areaName = "고려 원자력", areaType = AreaData.AreaType.Nuclear },
+        new AreaData { areaId = 4, areaName = "동해 화력", areaType = AreaData.AreaType.Nuclear },
+        new AreaData { areaId = 5, areaName = "보령 화력", areaType = AreaData.AreaType.Nuclear },
+        new AreaData { areaId = 6, areaName = "부산", areaType = AreaData.AreaType.Ocean },
+        new AreaData { areaId = 7, areaName = "사천 화력", areaType = AreaData.AreaType.Nuclear },
+        new AreaData { areaId = 8, areaName = "여수/광양", areaType = AreaData.AreaType.Ocean },
+        new AreaData { areaId = 9, areaName = "영광 원자력", areaType = AreaData.AreaType.Nuclear },
+        new AreaData { areaId = 10, areaName = "울산", areaType = AreaData.AreaType.Ocean }
+    };
 
     // 관측소 목록 반환 (모든 지역의 관측소들)
     public List<ObsData> GetObss()
@@ -87,7 +291,6 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
     public AreaData GetArea(int areaId) => GetAreas().FirstOrDefault(area => area.areaId == areaId);
     public ToxinStatus GetObsStatus(int obsId)
     {
-        // 임시 알람에 맞춰 상태 변경
         if (dummyAlarmData.Any(log => log.obsId == obsId && log.status == 2)) return ToxinStatus.Red;
         if (dummyAlarmData.Any(log => log.obsId == obsId && log.status == 1)) return ToxinStatus.Yellow;
         if (dummyAlarmData.Any(log => log.obsId == obsId && log.status == 0)) return ToxinStatus.Purple;
@@ -95,7 +298,6 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
     }
     public ToxinStatus GetAreaStatus(int areaId)
     {
-        // 임시 알람에 맞춰 상태 변경
         if (dummyAlarmData.Any(log => GetObs(log.obsId).areaId == areaId && log.status == 2)) return ToxinStatus.Red;
         if (dummyAlarmData.Any(log => GetObs(log.obsId).areaId == areaId && log.status == 1)) return ToxinStatus.Yellow;
         if (dummyAlarmData.Any(log => GetObs(log.obsId).areaId == areaId && log.status == 0)) return ToxinStatus.Purple;
@@ -107,28 +309,36 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
     // 월간 알람 발생 TOP5 (실제 지역명 기반)
     public List<(int, int)> GetAlarmMonthly() => new List<(int, int)>
     {
-        (1, 18),  // 인천: 18건
-        (6, 15),  // 부산: 15건  
-        (3, 12),  // 고려 화학단지: 12건
-        (4, 9),   // 동해 화력: 9건
-        (8, 7)    // 여수/광양: 7건
+        (1, 18), (6, 15), (3, 12), (4, 9), (8, 7)
     };
 
     // 연간 알람 발생 TOP5 (실제 지역명 기반)
     public List<(int, AlarmCount)> GetAlarmYearly() => new List<(int, AlarmCount)>
     {
-        (1, new AlarmCount(95, 18, 8, 2)),   // 인천
-        (6, new AlarmCount(82, 15, 6, 1)),   // 부산
-        (3, new AlarmCount(68, 12, 5, 1)),   // 고려 화학단지
-        (4, new AlarmCount(55, 9, 3, 0)),    // 동해 화력
-        (8, new AlarmCount(42, 7, 2, 0))     // 여수/광양
+        (1, new AlarmCount(95, 18, 8, 2)),
+        (6, new AlarmCount(82, 15, 6, 1)),
+        (3, new AlarmCount(68, 12, 5, 1)),
+        (4, new AlarmCount(55, 9, 3, 0)),
+        (8, new AlarmCount(42, 7, 2, 0))
     };
 
     public List<AlarmSummaryModel> GetAlarmSummary() => new List<AlarmSummaryModel>();
     public AlarmCount GetObsStatusCountByAreaId(int areaId)
     {
-        var obsInArea = GetObssByAreaId(areaId);
-        return new AlarmCount(obsInArea.Count, 0, 0, 0); // 정상: 3개, 나머지: 0개
+        switch (areaId)
+        {
+            case 1: // 인천 - 지역1,2가 경보/경계
+                return new AlarmCount(1, 1, 1, 0); // 정상1, 경고1, 경보2, 설비이상0
+
+            case 2: // 평택 - 지역1이 설비이상  
+                return new AlarmCount(2, 0, 0, 1); // 정상2, 경고0, 경보0, 설비이상1
+
+            case 3: // 고려 화학단지
+                return new AlarmCount(3, 0, 0, 0); // 모두 정상
+
+            default:
+                return new AlarmCount(3, 0, 0, 0); // 기본값 모두 정상
+        }
     }
     public ToxinStatus GetSensorStatus(int obsId, int boardId, int hnsId) => ToxinStatus.Green;
     public DateTime GetCurrentChartEndTime() => DateTime.Now;
@@ -149,7 +359,7 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
         toxin1.CreateRandomValues();
         dummyToxinData.Add(toxin1);
 
-        // 유해물질 (BoardID: 2), 19개 센서만 포함
+        // 유해물질 (BoardID: 2), 19개 센서
         string[] hnsNames = new string[] {
             "1,4-다이옥산", "클로로포름", "트리클로로에틸렌", "페놀", "메틸 에틸 케톤",
             "디클로로메탄", "헥산(모든이성질체)", "n-알칸(C10-C20)", "장쇄알카릴슬폰산바륨(C11-C50)", "포스포러스황화 폴리 올레핀바륨",
@@ -158,7 +368,6 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
         };
         for (int i = 0; i < hnsNames.Length; i++)
         {
-            string useyn = new int[] { 1, 3, 4, 8, 10, 16, 17, 19 }.Contains(i + 1) ? "0" : "1";
             var toxin = new ToxinData(new HnsResourceModel
             {
                 boardidx = 2,
@@ -166,19 +375,19 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
                 hnsnm = hnsNames[i],
                 alahival = 9999,
                 alahihival = 9999,
-                useyn = useyn,
+                useyn = "1",
                 unit = "mg/L"
             });
             toxin.CreateRandomValues();
             dummyToxinData.Add(toxin);
         }
 
-        // 수질 (BoardID: 3), 7개 센서만 포함
+        // 수질 (BoardID: 3), 7개 센서
         dummyToxinData.Add(CreateToxin(3, 1, "Temperature", 555, 999, "1", "°C"));
         dummyToxinData.Add(CreateToxin(3, 2, "DO", 555, 999, "1", "mg/L"));
         dummyToxinData.Add(CreateToxin(3, 3, "BOD", 66, 103, "1", "mg/L"));
         dummyToxinData.Add(CreateToxin(3, 4, "Conductivity", 999, 999, "1", "μS/s"));
-        dummyToxinData.Add(CreateToxin(3, 5, "pH", 999, 999, "1", "")); // NULL은 빈 문자열로 처리
+        dummyToxinData.Add(CreateToxin(3, 5, "pH", 999, 999, "1", ""));
         dummyToxinData.Add(CreateToxin(3, 6, "Turbidity", 222, 333, "1", "NTU"));
         dummyToxinData.Add(CreateToxin(3, 7, "TSS", 40, 80, "1", "mg/L"));
     }
@@ -202,54 +411,52 @@ public class DummyDataProvider : MonoBehaviour, ModelProvider
 
     private void CreateDummyAlarmData()
     {
-        // 임시 알람 데이터 생성
-        // "인천" 지역, "지역1" 관측소에 대한 경보 알람
+        // 인천 지역1 - Temperature 경보
         dummyAlarmData.Add(new LogData(
-            obsid: 11, // 인천(1)의 지역1(1)
+            obsid: 11,
             boardid: 3,
             areaName: "인천",
             obsName: "지역1",
-            hnsId: 1, // Temperature 센서
+            hnsId: 1,
             hnsName: "Temperature",
             dt: DateTime.Now,
-            status: 2, // 2: 경보 (Red)
+            status: 2,
             val: 999.0f,
             idx: 1001,
             serious: 555.0f,
             warning: 999.0f
         ));
 
-        // 다른 상태의 알람도 추가하여 테스트 가능
-        // 경계 알람
+        // 인천 지역2 - BOD 경계
         dummyAlarmData.Add(new LogData(
-            obsid: 12, // 인천(1)의 지역2(2)
+            obsid: 12,
             boardid: 3,
             areaName: "인천",
             obsName: "지역2",
-            hnsId: 3, // BOD 센서
+            hnsId: 3,
             hnsName: "BOD",
             dt: DateTime.Now.AddMinutes(-5),
-            status: 1, // 1: 경계 (Yellow)
+            status: 1,
             val: 70.0f,
             idx: 1002,
             serious: 66.0f,
             warning: 103.0f
         ));
 
-        // 설비 이상 알람
+        // 평택/대산 지역1 - 독성도 설비이상
         dummyAlarmData.Add(new LogData(
-            obsid: 21, // 평택/대산(2)의 지역1(1)
-            boardid: 2,
+            obsid: 21,
+            boardid: 1,  // 2 → 1 (독성도 보드)
             areaName: "평택/대산",
             obsName: "지역1",
-            hnsId: 1, // 1,4-다이옥산
-            hnsName: "1,4-다이옥산",
+            hnsId: 1,    // 독성도 센서
+            hnsName: "독성도",  // "1,4-다이옥산" → "독성도"
             dt: DateTime.Now.AddHours(-1),
-            status: 0, // 0: 설비이상 (Purple)
+            status: 0,
             val: 0.0f,
             idx: 1003,
-            serious: 9999.0f,
-            warning: 9999.0f
+            serious: 0.0f,    // 9999.0f → 0.0f
+            warning: 20.0f    // 9999.0f → 20.0f
         ));
     }
 }
