@@ -48,7 +48,7 @@ namespace Onthesys
             this.values = new List<float>();
             this.aiValues = new List<float>();
             this.diffValues = new List<float>();
-            this.unit = model.unit;  //단위 설정
+            this.unit = unit;  //단위 설정
             this.stcd = "00"; // 기본값: 정상
         }
 
@@ -69,7 +69,7 @@ namespace Onthesys
                 {
                     if (model.val >= model.hihi)
                         this.status = ToxinStatus.Red;
-                    else if (model.val >= model.hi)
+                    else if (model.val > model.hi)
                         this.status = ToxinStatus.Yellow;
                     else
                         this.status = ToxinStatus.Green;
