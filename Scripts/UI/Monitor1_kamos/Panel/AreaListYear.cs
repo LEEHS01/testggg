@@ -35,7 +35,7 @@ public class AreaListYear : MonoBehaviour
         if (titleText != null)
         {
             DateTime now = DateTime.Now;
-            string monthText = $"{now.Year}년 알람 발생 TOP5";
+            string monthText = $"알람 발생 건수 ({now.Year}년)";
             titleText.text = monthText;
         }
     }

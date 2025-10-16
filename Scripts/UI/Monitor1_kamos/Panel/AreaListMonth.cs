@@ -33,11 +33,11 @@ public class AreaListMonth : MonoBehaviour
         if (titleText != null)
         {
             DateTime now = DateTime.Now;
-            string monthText = $"{now.Month}월 최다 알람 발생 TOP 5";
+            string monthText = $"알람 발생 건수({now.Month}월)";
             titleText.text = monthText;
         }
     }
-
+    
     private void OnInitiate(object obj)
     {
         SetCurrentMonthTitle();
@@ -49,7 +49,7 @@ public class AreaListMonth : MonoBehaviour
                 (1,5),(2,3),(3,3),(4,2),(5,1),
             };
 
-        //상위 5개 지역 5개를 선택
+        //상위 5개 지역 5개를 선택23.0783348
         alarmMonthlyList = alarmMonthlyList.OrderByDescending(item => item.count).ToList().GetRange(0, 5);
 
         //상위 5개 지역의 알람 총계를 산출

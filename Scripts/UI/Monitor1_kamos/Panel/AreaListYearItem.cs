@@ -30,7 +30,7 @@ public class AreaListYearItem : MonoBehaviour
     public void SetAreaData(int areaId, string areaName, AlarmCount alarmCount) 
     {
         this.areaId = areaId;
-        lblAreaName.text = areaName;
+        lblAreaName.text = areaName + $"(3)";
         lblSerious.text = "" + alarmCount.yellow;
         lblWarning.text = "" + alarmCount.red;
         lblMalfunction.text = "" + alarmCount.purple;

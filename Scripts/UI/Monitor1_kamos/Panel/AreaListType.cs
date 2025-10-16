@@ -39,8 +39,8 @@ public class AreaListType : MonoBehaviour
 
         lblTitle = transform.Find("Text (TMP)").GetComponent<TMP_Text>();
         lblTitle.text = areaType == AreaData.AreaType.Ocean ?
-            "해양산업시설 방류구 주변 관측소 현황" :
-            "발전소 방류구 주변 관측소 현황"; 
+            "집중우심해역 모니터링 현황" :
+            "주요 발전소 모니터링 현황"; 
     }
 
     private void Start()

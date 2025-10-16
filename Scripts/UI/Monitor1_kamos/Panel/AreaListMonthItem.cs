@@ -37,7 +37,7 @@ public class AreaListMonthItem : MonoBehaviour
         Debug.Log($"SetAreaData 호출: {areaName} = {count}건");
         imgColor.color = color;
         this.areaId = areaId;
-        lblAreaName.text = areaName;
+        lblAreaName.text = areaName + $"(3)";
 
         numDatas.ForEach(numData => numData.ForcedUpdateView(count));
 

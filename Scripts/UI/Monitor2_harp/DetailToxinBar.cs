@@ -23,6 +23,7 @@ internal class DetailToxinBar : MonoBehaviour
 
     private DateTime aladt;
     public TMP_Text txtName;
+    public TMP_Text txtQueryTime;
     public UILineRenderer2 line;
     public List<TMP_Text> hours;      // 시간축 라벨
     public List<TMP_Text> verticals;  // 값축 라벨
@@ -81,6 +82,8 @@ internal class DetailToxinBar : MonoBehaviour
         if (toxinData.values.Count == 0)
             toxinData = modelProvider.GetToxin(toxinData.boardid, toxinData.hnsid);
 
+        UpdateQueryTime();
+
         List<float> normalizedValues = new();
         float max = toxinData.values.Max();
 
@@ -132,6 +135,7 @@ internal class DetailToxinBar : MonoBehaviour
         }
 
         txtName.text = toxinData.hnsName;
+        UpdateQueryTime();
 
         Debug.Log($"Min: {toxinData.values.Min()}, Max: {toxinData.values.Max()}, Average: {toxinData.values.Average()}");
 
@@ -155,6 +159,24 @@ internal class DetailToxinBar : MonoBehaviour
         Debug.Log($"[OnSelectCurrentSensor] 그래프 정상 업데이트 완료 (boardId={boardId}, hnsId={hnsId})");
         originalValues.Clear();
         originalValues.AddRange(toxinData.values);
+    }
+
+    /// <summary>
+    /// 새 메서드: 조회 시점 업데이트
+    /// </summary>
+    private void UpdateQueryTime()
+    {
+        if (txtQueryTime == null) return;
+
+        DateTime queryTime = modelProvider.GetCurrentChartEndTime();
+
+        // 데이터가 있으면 마지막 시간 사용
+        if (toxinData?.dateTimes != null && toxinData.dateTimes.Count > 0)
+        {
+            queryTime = toxinData.dateTimes.Last();
+        }
+
+        txtQueryTime.text = $"조회시점: {queryTime:yyyy.MM.dd HH:mm}";
     }
 
     /// <summary>
