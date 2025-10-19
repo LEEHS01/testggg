@@ -176,14 +176,15 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             // historicalAlarms 업데이트 (모든 알람)
             historicalAlarms.AddRange(toAddModels.Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
-
             DateTime oneWeekAgo = DateTime.Now.AddDays(-7);
             int removedOldCount = historicalAlarms.RemoveAll(logData => logData.time < oneWeekAgo);
 
             pastTimestamp = newTimestamp;
 
-            // 센서값과 상태를 한번에 업데이트
-            if (currentObsId > 0)
+            //  수정: 알람이 실제로 변경됐을 때만 센서값 업데이트
+            bool hasAlarmChanges = toAddModels.Count > 0 || toRemoveModels.Count > 0;
+
+            if (hasAlarmChanges && currentObsId > 0)
             {
                 dbManager.GetToxinValueLast(currentObsId, currents =>
                 {
@@ -193,12 +194,11 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
                         if (curr != null)
                         {
-                            //  UpdateValue 내부에서 상태도 함께 계산
-                            toxin.UpdateValue(curr);  // ToxinData.UpdateValue()가 상태도 설정
+                            toxin.UpdateValue(curr);
                         }
                     });
 
-                    // 활성 알람 기반 상태 보정 (더 높은 상태로만 업데이트)
+                    // 활성 알람 기반 상태 보정
                     currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log =>
                     {
                         var toxin = toxins.Find(t => t.boardid == log.boardId && t.hnsid == log.hnsId);
@@ -215,8 +215,8 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         }
                     });
 
-                    // 개선: 하나의 이벤트로 통합
-                    uiManager.Invoke(UiEventType.ChangeSensorStatus);  // 통합 이벤트
+                    //  알람 변화가 있을 때만 이벤트 발생
+                    uiManager.Invoke(UiEventType.ChangeSensorStatus);
                 });
             }
 
