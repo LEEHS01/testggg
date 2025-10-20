@@ -181,43 +181,30 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             pastTimestamp = newTimestamp;
 
-            //  수정: 알람이 실제로 변경됐을 때만 센서값 업데이트
+            // 알람이 실제로 변경됐을 때만 상태 업데이트
             bool hasAlarmChanges = toAddModels.Count > 0 || toRemoveModels.Count > 0;
 
             if (hasAlarmChanges && currentObsId > 0)
             {
-                dbManager.GetToxinValueLast(currentObsId, currents =>
+                // 활성 알람 기반 상태 보정 (차트 데이터는 건드리지 않음)
+                currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log =>
                 {
-                    // 값과 상태를 동시에 업데이트
-                    toxins.ForEach(toxin =>
+                    var toxin = toxins.Find(t => t.boardid == log.boardId && t.hnsid == log.hnsId);
+                    if (toxin != null)
                     {
-                        var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
-                        if (curr != null)
+                        ToxinStatus alarmStatus = log.status == 0 ? ToxinStatus.Purple :
+                                                  log.status == 1 ? ToxinStatus.Yellow :
+                                                  ToxinStatus.Red;
+
+                        if ((int)alarmStatus > (int)toxin.status)
                         {
-                            toxin.UpdateValue(curr);
+                            toxin.status = alarmStatus;
                         }
-                    });
-
-                    // 활성 알람 기반 상태 보정
-                    currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log =>
-                    {
-                        var toxin = toxins.Find(t => t.boardid == log.boardId && t.hnsid == log.hnsId);
-                        if (toxin != null)
-                        {
-                            ToxinStatus alarmStatus = log.status == 0 ? ToxinStatus.Purple :
-                                                      log.status == 1 ? ToxinStatus.Yellow :
-                                                      ToxinStatus.Red;
-
-                            if ((int)alarmStatus > (int)toxin.status)
-                            {
-                                toxin.status = alarmStatus;
-                            }
-                        }
-                    });
-
-                    //  알람 변화가 있을 때만 이벤트 발생
-                    uiManager.Invoke(UiEventType.ChangeSensorStatus);
+                    }
                 });
+
+                // 알람 변화가 있을 때만 이벤트 발생
+                uiManager.Invoke(UiEventType.ChangeSensorStatus);
             }
 
             // 알람 변화가 있을 때만 알람 리스트 업데이트

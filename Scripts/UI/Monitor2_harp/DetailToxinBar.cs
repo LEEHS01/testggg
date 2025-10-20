@@ -87,13 +87,16 @@ internal class DetailToxinBar : MonoBehaviour
         List<float> normalizedValues = new();
         float max = toxinData.values.Max();
 
+        // ✅ +1 추가!
+        float normalizeMax = max + 1;
+
         if (max <= 0)
         {
             toxinData.values.ForEach(val => normalizedValues.Add(0f));
         }
         else
         {
-            toxinData.values.ForEach(val => normalizedValues.Add(val / max));
+            toxinData.values.ForEach(val => normalizedValues.Add(val / normalizeMax));
         }
 
         line.UpdateControlPoints(normalizedValues);
@@ -139,9 +142,11 @@ internal class DetailToxinBar : MonoBehaviour
 
         Debug.Log($"Min: {toxinData.values.Min()}, Max: {toxinData.values.Max()}, Average: {toxinData.values.Average()}");
 
-        // 0으로 나누기 방지 정규화
         List<float> normalizedValues = new();
         float max = toxinData.values.Max();
+
+        // ✅ +1 추가!
+        float normalizeMax = max + 1;
 
         if (max <= 0)
         {
@@ -149,7 +154,7 @@ internal class DetailToxinBar : MonoBehaviour
         }
         else
         {
-            toxinData.values.ForEach(val => normalizedValues.Add(val / max));
+            toxinData.values.ForEach(val => normalizedValues.Add(val / normalizeMax));
         }
 
         SetVertical(max);
@@ -499,41 +504,56 @@ internal class DetailToxinBar : MonoBehaviour
     }
 
     /// <summary>
-    /// 툴팁 표시 - 시간과 값 정보
+    /// 툴팁 표시 - 툴팁의 실제 부모 기준으로 위치 계산
     /// </summary>
     private void ShowTooltip(int index, Vector3 _)
     {
         if (tooltip == null) return;
-
         tooltip.SetActive(true);
-
         float value = originalValues[index];
         DateTime time = GetTimeForIndex(index);
-
         if (txtTime != null) txtTime.text = time.ToString("yy.MM.dd HH:mm");
         if (txtValue != null) txtValue.text = value.ToString("F2");
-
         RectTransform tip = tooltip.GetComponent<RectTransform>();
         if (tip == null) return;
-
-        var canvas = GetComponentInParent<Canvas>();
-        if (!TryGetPointerOnCanvas(canvas, out var screenPos))
+        // ✅ 노드점 위치 가져오기
+        if (line == null ||
+            line.controlPointsObjects == null ||
+            index >= line.controlPointsObjects.Count ||
+            line.controlPointsObjects[index] == null)
         {
             HideTooltip();
             return;
         }
+        Transform nodePoint = line.controlPointsObjects[index];
+        var canvas = GetComponentInParent<Canvas>();
+        // ✅ 노드점의 월드 좌표 → 툴팁 부모의 로컬 좌표로 변환
+        RectTransform tooltipParent = tip.parent as RectTransform;
 
-        Vector2 local;
-        if (RectTransformUtility.ScreenPointToLocalPointInRectangle(
-            canvas.transform as RectTransform, screenPos, canvas.worldCamera, out local))
+        Vector2 screenPos = RectTransformUtility.WorldToScreenPoint(
+            canvas.worldCamera,
+            nodePoint.position);
+        Vector2 localPosInTooltipParent;
+        RectTransformUtility.ScreenPointToLocalPointInRectangle(
+            tooltipParent,
+            screenPos,
+            canvas.worldCamera,
+            out localPosInTooltipParent);
+        // ✅ 툴팁을 노드점 위쪽에 배치
+        float offsetY = tip.rect.height / 2 + 20;
+        float offsetX = 0;
+
+        // ✅ 오른쪽 끝 4개 노드점은 왼쪽으로 보정
+        if (index >= originalValues.Count - 4)
         {
-            // 툴팁 위치 조정
-            local.y += tip.sizeDelta.y / 2 + 60;
-            local.x -= (index >= originalValues.Count - 4) ? 400 : 350;
-            tip.anchoredPosition = local;
+            offsetX = -tip.rect.width / 2 - 10;  // 툴팁 너비의 절반 + 여백 10픽셀
         }
-    }
 
+        tip.anchoredPosition = new Vector2(
+            localPosInTooltipParent.x + offsetX,
+            localPosInTooltipParent.y + offsetY
+        );
+    }
     private void HideTooltip()
     {
         tooltip.SetActive(false);
