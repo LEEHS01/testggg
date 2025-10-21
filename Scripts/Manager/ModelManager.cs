@@ -852,6 +852,10 @@ public class ModelManager : MonoBehaviour, ModelProvider
     #endregion [DataStructs]
 
     #region [ModelProvider]
+    public int GetCurrentObsId()
+    {
+        return currentObsId;
+    }
     public ObsData GetObs(int obsId) => obss.Find(obs => obs.id == obsId);
 
     public List<ObsData> GetObss() => obss;
