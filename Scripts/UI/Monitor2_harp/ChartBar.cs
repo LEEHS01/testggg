@@ -9,7 +9,7 @@ using UnityEngine;
 
 internal class ChartBar : MonoBehaviour
 {
-    public UILineRenderer2 line;
+    public UILineRenderer3 line;
     public List<TMP_Text> hours;
     public List<TMP_Text> verticals;
 
