@@ -17,7 +17,7 @@ public class PopupTableData : MonoBehaviour
     public TableUI table;                   // Table 컴포넌트
     public Button btnClose;                 // 닫기 버튼
     public TMP_Text txtSensorName;          // 센서 이름 표시
-    public TMP_Text txtQueryTime;           // ✅ 조회 시간 표시 추가
+    public TMP_Text txtQueryTime;           // 조회 시간 표시 
 
     private ToxinData currentToxinData;     // 현재 표시 중인 센서 데이터
 
@@ -51,7 +51,7 @@ public class PopupTableData : MonoBehaviour
         if (txtSensorName != null)
             txtSensorName.text = $"{toxinData.hnsName}";
 
-        // ✅ 조회 시간 표시
+        // 조회 시간 표시
         UpdateQueryTime();
 
         // 표에 데이터 채우기
@@ -59,7 +59,7 @@ public class PopupTableData : MonoBehaviour
     }
 
     /// <summary>
-    /// ✅ 조회 시간 업데이트
+    /// 조회 시간 업데이트
     /// </summary>
     private void UpdateQueryTime()
     {
@@ -91,7 +91,7 @@ public class PopupTableData : MonoBehaviour
 
         // 헤더 설정 (row 0)
         table.GetCell(0, 0).text = "시간";
-        table.GetCell(0, 1).text = $"측정값 ({currentToxinData.unit})";
+        table.GetCell(0, 1).text = $"측정값({currentToxinData.unit})";
 
         // 데이터 개수 확인
         int dataCount = Mathf.Min(
@@ -101,7 +101,7 @@ public class PopupTableData : MonoBehaviour
 
         Debug.Log($"데이터 개수: {dataCount}");
 
-        // ✅ 역순으로 데이터 채우기 (최신 데이터가 위로)
+        // 역순으로 데이터 채우기 (최신 데이터가 위로)
         for (int i = 0; i < dataCount && i < 72; i++)
         {
             int rowIndex = i + 1; // row1부터 시작

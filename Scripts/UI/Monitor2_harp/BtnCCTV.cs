@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using Onthesys;
+using System;
+using UnityEngine;
 using UnityEngine.UI;
-using Onthesys;
 
 public class BtnCCTV : MonoBehaviour
 {
@@ -28,8 +29,7 @@ public class BtnCCTV : MonoBehaviour
         {
             Debug.LogWarning("[BtnCCTV] 선택된 관측소가 없습니다!");
             // 필요시 에러 팝업 표시
-            // UiManager.Instance.Invoke(UiEventType.PopupError, 
-            //     new Exception("관측소를 먼저 선택해주세요."));
+            UiManager.Instance.Invoke(UiEventType.PopupErrorMonitorB, new Exception("관측소를 먼저 선택해주세요."));
             return;
         }
 

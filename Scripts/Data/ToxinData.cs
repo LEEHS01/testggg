@@ -1,4 +1,4 @@
-using Newtonsoft.Json;
+ï»¿using Newtonsoft.Json;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -29,9 +29,9 @@ namespace Onthesys
         public bool on = true;
         public bool fix = false;
         public ToxinStatus status { get; set; } = ToxinStatus.Green;
-        public List<DateTime> dateTimes; // °¢ °ªÀÇ ½ÇÁ¦ ÃøÁ¤ ½Ã°£
-        public string unit;  // ´ÜÀ§ Ãß°¡
-        public string stcd = "00";  // STCD »óÅÂÄÚµå Ãß°¡
+        public List<DateTime> dateTimes; // ê° ê°’ì˜ ì‹¤ì œ ì¸¡ì • ì‹œê°„
+        public string unit;  // ë‹¨ìœ„ ì¶”ê°€
+        public string stcd = "00";  // STCD ìƒíƒœì½”ë“œ ì¶”ê°€
 
 
         public ToxinData(HnsResourceModel model, string unit = "")
@@ -48,8 +48,8 @@ namespace Onthesys
             this.values = new List<float>();
             this.aiValues = new List<float>();
             this.diffValues = new List<float>();
-            this.unit = unit;  //´ÜÀ§ ¼³Á¤
-            this.stcd = "00"; // ±âº»°ª: Á¤»ó
+            this.unit = unit;  //ë‹¨ìœ„ ì„¤ì •
+            this.stcd = "00"; // ê¸°ë³¸ê°’: ì •ìƒ
         }
 
         public void UpdateValue(CurrentDataModel model)
@@ -62,9 +62,15 @@ namespace Onthesys
                 this.on = Convert.ToInt32(model.useyn) == 1;
                 this.fix = Convert.ToInt32(model.fix) == 1;
                 this.stcd = model.stcd ?? "00";
-                this.SetLastValue(model.val);
 
-                // »óÅÂµµ ¿©±â¼­ °è»ê (¿É¼Ç)
+                DateTime now = DateTime.Now;
+                DateTime roundedTime = new DateTime(
+                    now.Year, now.Month, now.Day,
+                    now.Hour, (now.Minute / 10) * 10, 0); // 10ë¶„ ë‹¨ìœ„ë¡œ ë‚´ë¦¼
+
+                this.SetLastValue(model.val, roundedTime);
+
+                // ìƒíƒœë„ ì—¬ê¸°ì„œ ê³„ì‚° (ì˜µì…˜)
                 if (!this.fix && model.val.HasValue)
                 {
                     if (model.val >= model.hihi)
@@ -77,19 +83,30 @@ namespace Onthesys
             }
         }
 
-        private void SetLastValue(float? val)
+        private void SetLastValue(float? val, DateTime time)
         {
-            //Chart°¡ 24PointÀÓ ---- ÆÄ¾Ç³»¿ë
             int countExpected = Mathf.FloorToInt((Option.TREND_DURATION_REALTIME * 60f) / Option.TREND_TIME_INTERVAL);
-            //Debug.Log("countExpected : " + countExpected);
+
+            // ì¤‘ë³µ ì‹œê°„ ì²´í¬ - ê°™ì€ ì‹œê°„ì´ë©´ ë®ì–´ì“°ê¸°
+            if (this.dateTimes.Count > 0 && this.dateTimes.Last() == time)
+            {
+                // ê°™ì€ ì‹œê°„ì˜ ë°ì´í„°ë©´ ë§ˆì§€ë§‰ ê°’ë§Œ ê°±ì‹ 
+                if (val.HasValue)
+                {
+                    this.values[this.values.Count - 1] = (float)val;
+                }
+                return; // ì¤‘ë³µì´ë¯€ë¡œ ì¶”ê°€í•˜ì§€ ì•ŠìŒ
+            }
+
+            // ìŠ¬ë¼ì´ë”© ìœˆë„ìš°
             if (this.values.Count >= countExpected)
             {
                 this.values.RemoveAt(0);
+                if (this.dateTimes.Count > 0)
+                    this.dateTimes.RemoveAt(0);
             }
 
-            //°ªÀÌ ¾ø´Ù¸é ¹«ÀÛÀ§°ªÀ» Ãß°¡.
-            //½ÇÁ¦·Î °ª µé¾î¿À°í ÀÖÀ½ ex. ToxinData.SetLastValue.val == 3.99
-            //Debug.Log("ToxinData.SetLastValue.val == " + val.ToString());
+            // ìƒˆ ê°’ ì¶”ê°€
             if (val == null)
             {
                 int r = UnityEngine.Random.Range(0, (int)(warning * Option.TOXIN_STATUS_GREEN));
@@ -99,7 +116,10 @@ namespace Onthesys
             {
                 this.values.Add((float)val);
             }
+
+            this.dateTimes.Add(time);
         }
+
         public void CreateRandomValues()
         {
             int countExpected = Mathf.FloorToInt((Option.TREND_DURATION_REALTIME * 60f) / Option.TREND_TIME_INTERVAL);
@@ -167,7 +187,7 @@ namespace Onthesys
         Green,
         Yellow,
         Red,
-        Purple//¼öÁ¤ÇÑ ºÎºĞ
+        Purple//ìˆ˜ì •í•œ ë¶€ë¶„
     }
 }
 

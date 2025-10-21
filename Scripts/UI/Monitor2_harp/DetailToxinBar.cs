@@ -67,6 +67,14 @@ internal class DetailToxinBar : MonoBehaviour
     /// </summary>
     private void OnClickShowTable()
     {
+        // 센서 데이터 확인
+        if (toxinData == null)
+        {
+            Debug.LogWarning("[DetailToxinBar] 센서를 먼저 선택해주세요.");
+            UiManager.Instance.Invoke(UiEventType.PopupErrorMonitorB,
+                new Exception("센서를 먼저 선택해주세요."));
+            return;
+        }
         if (toxinData == null)
         {
             Debug.LogWarning("표시할 데이터가 없습니다.");
@@ -112,11 +120,11 @@ internal class DetailToxinBar : MonoBehaviour
             toxinData = modelProvider.GetToxin(toxinData.boardid, toxinData.hnsid);
 
         UpdateQueryTime();
+        SetDynamicHours(1);
 
         List<float> normalizedValues = new();
         float max = toxinData.values.Max();
 
-        // ✅ +1 추가!
         float normalizeMax = max + 1;
 
         if (max <= 0)

@@ -25,7 +25,7 @@ namespace Onthesys
                 Option.url = returnUrl;
             }
 
-            int returnStatus = PlayerPrefs.GetInt("alarmThreshold", 2); // -1 대신 3 사용
+            int returnStatus = PlayerPrefs.GetInt("alarmThreshold", 3); // -1 대신 3 사용
 
             // 유효 범위 체크 (0~3)
             if (returnStatus < 0 || returnStatus > 3)
