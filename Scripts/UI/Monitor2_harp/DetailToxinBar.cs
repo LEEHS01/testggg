@@ -31,6 +31,11 @@ internal class DetailToxinBar : MonoBehaviour
 
     public TMP_Dropdown periodDropdown; // 기간 선택 (1일/7일/30일)
 
+    [Header("Table Popup")]
+    public UnityEngine.UI.Button btnShowTable;              // 표 보기 버튼
+    public PopupTableData popupTableData;    // 팝업 참조
+
+
     #region 툴팁 컴포넌트
     [Header("Tooltip Components")]
     public GameObject tooltip;
@@ -48,10 +53,34 @@ internal class DetailToxinBar : MonoBehaviour
         InitializeDropdown();
 
         UiManager.Instance.Register(UiEventType.SelectCurrentSensor, OnSelectCurrentSensor);
-        UiManager.Instance.Register(UiEventType.ChangeTrendLine, OnChangeTrendLine);
+        UiManager.Instance.Register(UiEventType.RefreshDetailChart, OnRefreshDetailChart);
         btnDetail.GetComponent<UnityEngine.UI.Button>().onClick.AddListener(OnClick);
 
+        if (btnShowTable != null)
+            btnShowTable.onClick.AddListener(OnClickShowTable);
+
         tooltip.SetActive(false);
+    }
+
+    /// <summary>
+    /// 표 보기 버튼 클릭
+    /// </summary>
+    private void OnClickShowTable()
+    {
+        if (toxinData == null)
+        {
+            Debug.LogWarning("표시할 데이터가 없습니다.");
+            return;
+        }
+
+        if (popupTableData != null)
+        {
+            popupTableData.ShowPopup(toxinData);
+        }
+        else
+        {
+            Debug.LogError("PopupTableData 참조가 연결되지 않았습니다!");
+        }
     }
 
     /// <summary>
@@ -75,7 +104,7 @@ internal class DetailToxinBar : MonoBehaviour
     /// <summary>
     /// 트렌드 라인 업데이트 시 차트 다시 그리기
     /// </summary>
-    private void OnChangeTrendLine(object obj)
+    private void OnRefreshDetailChart(object obj)
     {
         if (toxinData == null) return;
 

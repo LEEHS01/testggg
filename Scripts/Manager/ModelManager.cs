@@ -143,6 +143,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
             //        toxin.UpdateValue(current);
             //}
             uiManager.Invoke(UiEventType.ChangeTrendLine);
+            uiManager.Invoke(UiEventType.RefreshDetailChart);
         });
 
         //지속적으로 재귀 호출
@@ -425,6 +426,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
                     // UI 업데이트
                     UiManager.Instance.Invoke(UiEventType.ChangeSensorList);
                     UiManager.Instance.Invoke(UiEventType.ChangeTrendLine);
+                    UiManager.Instance.Invoke(UiEventType.RefreshDetailChart);
                     //Debug.LogError($"[10단계] UI 이벤트 발생 완료");
                     var defaultSensor = toxins.FirstOrDefault(t => t.boardid == 1);
                     if (defaultSensor != null)
