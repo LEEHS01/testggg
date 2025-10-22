@@ -136,12 +136,22 @@ internal class PopupDetailToxin : MonoBehaviour
         DateTime endTime = modelProvider.GetCurrentChartEndTime();
         Debug.LogWarning("차트 업데이트 시작");
 
+        /*if (this.data.aiValues != null)
+        {
+            Debug.Log($"========== AI값 전체 ({this.data.aiValues.Count}개) ==========");
+            Debug.Log(string.Join(", ", this.data.aiValues));
+        }
+        else
+        {
+            Debug.LogError("AI값이 null입니다!");
+        }*/
+
         // 그래프 데이터 추출기 정의 (aiValues, values, diffValues)
         List<Func<ToxinData, List<float>>> valuesExtractors = new()
     {
-        toxinData => toxinData.aiValues,
-        toxinData => toxinData.values,
-        toxinData => toxinData.diffValues,
+        toxinData => toxinData.chartAiValues,
+        toxinData => toxinData.chartValues,
+        toxinData => toxinData.chartDiffValues,
     };
         string[] dataNames = { "AI값", "측정값", "편차값" };
 

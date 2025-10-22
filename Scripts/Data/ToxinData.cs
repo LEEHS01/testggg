@@ -33,6 +33,12 @@ namespace Onthesys
         public string unit;  // 단위 추가
         public string stcd = "00";  // STCD 상태코드 추가
 
+        //  차트용 (고정됨 - GetChartValue로만 채워짐)
+        public List<float> chartValues;
+        public List<float> chartAiValues;
+        public List<float> chartDiffValues;
+        public List<DateTime> chartDateTimes;
+
 
         public ToxinData(HnsResourceModel model, string unit = "")
         {
@@ -50,6 +56,19 @@ namespace Onthesys
             this.diffValues = new List<float>();
             this.unit = unit;  //단위 설정
             this.stcd = "00"; // 기본값: 정상
+
+            this.chartValues = new List<float>();
+            this.chartAiValues = new List<float>();
+            this.chartDiffValues = new List<float>();
+            this.chartDateTimes = new List<DateTime>();
+        }
+
+        public void SetChartData(List<float> values, List<float> aiValues, List<float> diffValues, List<DateTime> dateTimes)
+        {
+            this.chartValues = new List<float>(values);
+            this.chartAiValues = new List<float>(aiValues);
+            this.chartDiffValues = new List<float>(diffValues);
+            this.chartDateTimes = new List<DateTime>(dateTimes);
         }
 
         public void UpdateValue(CurrentDataModel model)

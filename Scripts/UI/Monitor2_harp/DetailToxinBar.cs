@@ -123,7 +123,7 @@ internal class DetailToxinBar : MonoBehaviour
         SetDynamicHours(1);
 
         List<float> normalizedValues = new();
-        float max = toxinData.values.Max();
+        float max = toxinData.chartValues.Max();
 
         float normalizeMax = max + 1;
 
@@ -139,7 +139,7 @@ internal class DetailToxinBar : MonoBehaviour
         line.UpdateControlPoints(normalizedValues);
 
         originalValues.Clear();
-        originalValues.AddRange(toxinData.values);
+        originalValues.AddRange(toxinData.chartValues);
     }
 
     private void Initialize()
@@ -180,7 +180,7 @@ internal class DetailToxinBar : MonoBehaviour
         Debug.Log($"Min: {toxinData.values.Min()}, Max: {toxinData.values.Max()}, Average: {toxinData.values.Average()}");
 
         List<float> normalizedValues = new();
-        float max = toxinData.values.Max();
+        float max = toxinData.chartValues.Max();
 
         // ✅ +1 추가!
         float normalizeMax = max + 1;
@@ -200,7 +200,7 @@ internal class DetailToxinBar : MonoBehaviour
 
         Debug.Log($"[OnSelectCurrentSensor] 그래프 정상 업데이트 완료 (boardId={boardId}, hnsId={hnsId})");
         originalValues.Clear();
-        originalValues.AddRange(toxinData.values);
+        originalValues.AddRange(toxinData.chartValues);
     }
 
     /// <summary>
@@ -601,10 +601,10 @@ internal class DetailToxinBar : MonoBehaviour
     /// </summary>
     private DateTime GetTimeForIndex(int index)
     {
-        if (toxinData?.dateTimes != null &&
-            index >= 0 && index < toxinData.dateTimes.Count)
+        if (toxinData?.chartDateTimes != null &&
+            index >= 0 && index < toxinData.chartDateTimes.Count)
         {
-            return toxinData.dateTimes[index];
+            return toxinData.chartDateTimes[index];
         }
 
         return DateTime.Now; // 기본값

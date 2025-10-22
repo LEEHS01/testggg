@@ -69,10 +69,10 @@ public class PopupTableData : MonoBehaviour
         DateTime startTime = endTime.AddHours(-12); // 12시간 전
 
         // 또는 실제 데이터의 시작/끝 시간 사용
-        if (currentToxinData.dateTimes != null && currentToxinData.dateTimes.Count > 0)
+        if (currentToxinData.chartDateTimes != null && currentToxinData.chartDateTimes.Count > 0)
         {
-            startTime = currentToxinData.dateTimes[0];
-            endTime = currentToxinData.dateTimes[currentToxinData.dateTimes.Count - 1];
+            startTime = currentToxinData.chartDateTimes[0];
+            endTime = currentToxinData.chartDateTimes[currentToxinData.chartDateTimes.Count - 1];
         }
 
         txtQueryTime.text = $"{startTime:yyyy-MM-dd HH:mm} ~ {endTime:yyyy-MM-dd HH:mm}";
@@ -95,9 +95,9 @@ public class PopupTableData : MonoBehaviour
 
         // 데이터 개수 확인
         int dataCount = Mathf.Min(
-            currentToxinData.values.Count,
-            currentToxinData.dateTimes != null ? currentToxinData.dateTimes.Count : 0
-        );
+        currentToxinData.chartValues.Count,
+        currentToxinData.chartDateTimes != null ? currentToxinData.chartDateTimes.Count : 0
+    );
 
         Debug.Log($"데이터 개수: {dataCount}");
 
@@ -108,9 +108,9 @@ public class PopupTableData : MonoBehaviour
             int dataIndex = dataCount - 1 - i; // ← 역순 인덱스!
 
             // 시간 데이터
-            if (currentToxinData.dateTimes != null && dataIndex < currentToxinData.dateTimes.Count)
+            if (currentToxinData.chartDateTimes != null && dataIndex < currentToxinData.chartDateTimes.Count)
             {
-                DateTime time = currentToxinData.dateTimes[dataIndex];
+                DateTime time = currentToxinData.chartDateTimes[dataIndex];
                 table.GetCell(rowIndex, 0).text = time.ToString("yyyy-MM-dd HH:mm");
             }
             else
@@ -119,9 +119,9 @@ public class PopupTableData : MonoBehaviour
             }
 
             // 측정값 데이터
-            if (dataIndex < currentToxinData.values.Count)
+            if (dataIndex < currentToxinData.chartValues.Count)
             {
-                float value = currentToxinData.values[dataIndex];
+                float value = currentToxinData.chartValues[dataIndex];
                 table.GetCell(rowIndex, 1).text = value.ToString("F2");
             }
             else

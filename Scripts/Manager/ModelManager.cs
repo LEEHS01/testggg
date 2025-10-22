@@ -43,21 +43,21 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
         //Load Datas
         dbManager.GetObss(obss => obss.ForEach(obs => this.obss.Add(obs)));
-        dbManager.GetAreas(areas => 
+        dbManager.GetAreas(areas =>
         {
             areas.ForEach(area => this.areas.Add(area));
 
             dbManager.GetAlarmMonthly(monthModels =>
             {
                 alarmMonthly = new();
-                monthModels.ForEach(model => 
+                monthModels.ForEach(model =>
                     this.alarmMonthly.Add((GetAreaByName(model.areanm).areaId, model.cnt)));
             });
 
-            dbManager.GetAlarmYearly(yearModels => 
+            dbManager.GetAlarmYearly(yearModels =>
             {
                 alarmYearly = new();
-                yearModels.ForEach(model => 
+                yearModels.ForEach(model =>
                     this.alarmYearly.Add((GetAreaByName(model.areanm).areaId, new(0, model.ala1, model.ala2, model.ala0))));
             });
         });
@@ -104,50 +104,55 @@ public class ModelManager : MonoBehaviour, ModelProvider
     #endregion [Instantiating]
 
     #region [Processing]
-    void GetTrendValueProcess() 
+    void GetTrendValueProcess()
     {
+
         Debug.Log($"=== GetTrendValueProcess 시작 ===");
-        Debug.Log($"currentObsId: {currentObsId}");
-        Debug.Log($"기존 toxins 개수: {toxins.Count}");
-        dbManager.GetToxinValueLast(currentObsId, currents =>
+
+        //  차트 데이터 갱신 (12시간)
+        DateTime endTime = DateTime.Now;
+        endTime = new DateTime(endTime.Year, endTime.Month, endTime.Day, endTime.Hour, (endTime.Minute / 10) * 10, 0);
+        DateTime startTime = endTime.AddHours(-12);
+        startTime = new DateTime(startTime.Year, startTime.Month, startTime.Day, startTime.Hour, (startTime.Minute / 10) * 10, 0);
+
+        dbManager.GetChartValue(currentObsId, startTime, endTime, Option.TREND_TIME_INTERVAL, chartDatas =>
         {
-            /*foreach (var item in currents)
+            // 차트 데이터로 chartValues 갱신
+            toxins.ForEach(model =>
             {
-                Debug.Log($"{item.boardidx}/{item.hnsidx} : {item.useyn} {item.fix}");
-            }*/
-            if (currents.Count != toxins.Count) Debug.LogWarning("ModelManager - GetTrendValueProcess : currents와 toxins 간의 길이 불일치.");
+                var chartDataForSensor = chartDatas
+                    .Where(t => t.boardidx == model.boardid && t.hnsidx == model.hnsid)
+                    .OrderBy(t => DateTime.Parse(t.obsdt))
+                    .ToList();
 
+                var values = chartDataForSensor.Select(t => t.val).ToList();
+                var aiValues = chartDataForSensor.Select(t => t.aival).ToList();
+                var diffValues = chartDataForSensor.Select(t => Math.Abs(t.val - t.aival)).ToList();
+                var dateTimes = chartDataForSensor.Select(t => DateTime.Parse(t.obsdt)).ToList();
 
-            toxins.ForEach(toxin =>
-            {
-                var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
-                if (curr == null) throw new Exception("Cant find!");
-
-                toxin.UpdateValue(curr);
+                //  chartValues 업데이트 (고정 차트용)
+                model.SetChartData(values, aiValues, diffValues, dateTimes);
             });
 
+            // 실시간 값 갱신
+            dbManager.GetToxinValueLast(currentObsId, currents =>
+            {
+                toxins.ForEach(toxin =>
+                {
+                    var curr = currents.Find(cur => cur.boardidx == toxin.boardid && cur.hnsidx == toxin.hnsid);
+                    if (curr != null)
+                    {
+                        toxin.UpdateValue(curr);  // 실시간 values만 업데이트
+                    }
+                });
 
-            //for (int i = 0; i < toxins.Count; i++) 
-            //{
-            //    ToxinData toxin = toxins[i];
-            //    CurrentDataModel current = currents[i];
-
-
-            //    if (current.hnsidx == 4 && current.boardidx == 3)
-            //    {
-            //        Debug.LogError($"GetToxinValueLast {current.GetHashCode()} {toxin.on} {current.useyn}");
-
-            //        Debug.Log($"{toxin.boardid}/{toxin.hnsid} : {toxin.on} {toxin.fix}");
-            //        Debug.Log($"{current.boardidx}/{current.hnsidx} : {current.useyn} {toxin.fix}");
-            //    }
-            //        toxin.UpdateValue(current);
-            //}
-            uiManager.Invoke(UiEventType.ChangeTrendLine);
-            uiManager.Invoke(UiEventType.RefreshDetailChart);
+                // UI 업데이트
+                uiManager.Invoke(UiEventType.ChangeTrendLine);
+                uiManager.Invoke(UiEventType.RefreshDetailChart);
+            });
         });
 
-        //지속적으로 재귀 호출
-        //DOVirtual.DelayedCall(Option.ENABLE_DEBUG_CODE? 1 : Option.TREND_TIME_INTERVAL * 60, GetTrendValueProcess);
+        // 재귀 호출
         DOVirtual.DelayedCall(Option.TREND_TIME_INTERVAL * 60, GetTrendValueProcess);
     }
 
@@ -338,6 +343,7 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         aiValues.Insert(0, 0f);
                         diffValues.Insert(0, 0f);
                     }
+                    model.SetChartData(values, aiValues, diffValues, dateTimes);
 
                     // 모델에 저장
                     model.values = values;
