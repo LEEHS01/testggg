@@ -276,13 +276,15 @@ public class ObsMonitoring : MonoBehaviour
     void SetTitleStatus(ToxinStatus status)
     {
         imgSingalLamp.color = statusColorDic[status];
-        switch (status)
+        /*switch (status)
         {
             case ToxinStatus.Green: lblStatus.text = "정 상"; break;
             case ToxinStatus.Yellow: lblStatus.text = "경 계"; break;
             case ToxinStatus.Red: lblStatus.text = "경 보"; break;
             case ToxinStatus.Purple: lblStatus.text = "설비 이상"; break;
-        }
+        }*/
+        // 텍스트는 항상 고정
+        lblStatus.text = "세부 모니터링 결과";
     }
 
     /// <summary>

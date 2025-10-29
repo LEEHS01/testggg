@@ -161,7 +161,6 @@ public class ModelManager : MonoBehaviour, ModelProvider
     void GetAlarmChangedProcess()
     {
         DateTime newTimestamp = DateTime.Now;
-
         dbManager.GetAlarmLogsChangedInRange(pastTimestamp, newTimestamp, changedList =>
         {
             changedList = changedList.OrderBy(x => x.alacode).ToList();
@@ -169,14 +168,12 @@ public class ModelManager : MonoBehaviour, ModelProvider
             // 신규/해제 알람 구분
             List<AlarmLogModel> toAddModels = changedList.Where(changed =>
                 Convert.ToDateTime(changed.aladt) > pastTimestamp).ToList();
-
             List<AlarmLogModel> toRemoveModels = changedList.Where(changed =>
                 changed.turnoff_flag != null && Convert.ToDateTime(changed.turnoff_dt) > pastTimestamp).ToList();
 
             // currentAlarms 업데이트 (활성 알람만)
             currentAlarms.AddRange(toAddModels.Where(model => string.IsNullOrEmpty(model.turnoff_flag))
                 .Select(toAdd => LogData.FromAlarmLogModel(toAdd)));
-
             IEnumerable<int> toRemoveIndexes = toRemoveModels.Select(toRemove => toRemove.alaidx);
             currentAlarms.RemoveAll(logData => toRemoveIndexes.Contains(logData.idx));
 
@@ -189,10 +186,9 @@ public class ModelManager : MonoBehaviour, ModelProvider
 
             // 알람이 실제로 변경됐을 때만 상태 업데이트
             bool hasAlarmChanges = toAddModels.Count > 0 || toRemoveModels.Count > 0;
-
             if (hasAlarmChanges && currentObsId > 0)
             {
-                // 활성 알람 기반 상태 보정 (차트 데이터는 건드리지 않음)
+                // 신규 알람 발생 시 상태 상향 (기존 로직)
                 currentAlarms.Where(log => log.obsId == currentObsId).ToList().ForEach(log =>
                 {
                     var toxin = toxins.Find(t => t.boardid == log.boardId && t.hnsid == log.hnsId);
@@ -201,13 +197,45 @@ public class ModelManager : MonoBehaviour, ModelProvider
                         ToxinStatus alarmStatus = log.status == 0 ? ToxinStatus.Purple :
                                                   log.status == 1 ? ToxinStatus.Yellow :
                                                   ToxinStatus.Red;
-
                         if ((int)alarmStatus > (int)toxin.status)
                         {
                             toxin.status = alarmStatus;
                         }
                     }
                 });
+
+                // 알람 해제 시에만 상태 하향 조정
+                if (toRemoveModels.Count > 0)
+                {
+                    toRemoveModels.Where(log => log.obsidx == currentObsId).ToList().ForEach(log =>
+                    {
+                        var toxin = toxins.Find(t => t.boardid == log.boardidx && t.hnsid == log.hnsidx);
+                        if (toxin != null)
+                        {
+                            // 해당 toxin에 남아있는 활성 알람 확인
+                            var remainingAlarms = currentAlarms.Where(alarm =>
+                                alarm.obsId == currentObsId &&
+                                alarm.boardId == log.boardidx &&
+                                alarm.hnsId == log.hnsidx).ToList();
+
+                            if (remainingAlarms.Count == 0)
+                            {
+                                // 활성 알람이 없으면 Green으로
+                                toxin.status = ToxinStatus.Green;
+                            }
+                            else
+                            {
+                                // 남은 알람 중 최고 레벨로 설정
+                                ToxinStatus maxStatus = remainingAlarms.Select(alarm =>
+                                    alarm.status == 0 ? ToxinStatus.Purple :
+                                    alarm.status == 1 ? ToxinStatus.Yellow :
+                                    ToxinStatus.Red
+                                ).Max();
+                                toxin.status = maxStatus;
+                            }
+                        }
+                    });
+                }
 
                 // 알람 변화가 있을 때만 이벤트 발생
                 uiManager.Invoke(UiEventType.ChangeSensorStatus);

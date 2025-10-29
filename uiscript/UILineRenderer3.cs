@@ -1,15 +1,14 @@
-using DG.Tweening;
+﻿using UnityEngine;
+using UnityEngine.UI;
+using System.Collections.Generic;
+using TMPro;
+using System;
 //using Palmmedia.ReportGenerator.Core;
 using Onthesys;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using TMPro;
-using UnityEngine;
-using UnityEngine.UI;
+using DG.Tweening;
 
 [RequireComponent(typeof(CanvasRenderer))]
-public class UILineRenderer2 : MaskableGraphic
+public class UILineRenderer3 : MaskableGraphic
 {
     public List<Transform> controlPointsObjects = new List<Transform>(); // ���Ƶ�����б�
     protected List<Vector2> controlPoints = new List<Vector2>(); // ���Ƶ�λ���б�
@@ -18,7 +17,7 @@ public class UILineRenderer2 : MaskableGraphic
 
     #region [Temp]
 
-    (float max, float min) GetDotRangeOfX() 
+    (float max, float min) GetDotRangeOfX()
     {
         Transform hLineContainer = transform.parent.Find("Chart_Grid").Find("Lines_Horizon");
 
@@ -31,12 +30,13 @@ public class UILineRenderer2 : MaskableGraphic
         return dotRangeOfX;
     }
 
-    public bool SetDotAmount(int amount) 
+    public bool SetDotAmount(int amount)
     {
 
         (float min, float max) dotRangeOfX = GetDotRangeOfX();
 
-        try {
+        try
+        {
             //if (amount < 2) throw new Exception("그래프 점 개수가 너무 적습니다. 2 이상을 선언해주세요.");
             if (transform.childCount <= 0) throw new Exception($"UILineRenderer2({gameObject.name}) - SetDotAmount : 적합한 점 프리팹 대상을 찾지 못했습니다. 관리자에게 해당 메세지를 보여주세요.");
 
@@ -51,15 +51,15 @@ public class UILineRenderer2 : MaskableGraphic
             }
 
             for (int i = 0; i < amount; i++)
-            { 
+            {
                 var newDot = Instantiate<GameObject>(dotPrefab);
                 newDot.transform.SetParent(transform);
                 newDot.transform.localScale = Vector3.one * 0.5f;
                 controlPointsObjects.Add(newDot.transform);
             }
-            Destroy(dotPrefab); 
+            Destroy(dotPrefab);
 
-            
+
 
             for (int i = 0; i < controlPointsObjects.Count; i++)
             {
@@ -74,7 +74,8 @@ public class UILineRenderer2 : MaskableGraphic
                 };
             }
         }
-        catch (Exception ex){
+        catch (Exception ex)
+        {
             Debug.LogException(ex);
             return false;
         }
@@ -119,7 +120,7 @@ public class UILineRenderer2 : MaskableGraphic
         DateTime startDt = dt.AddHours(-4);
         var turm = (dt - startDt).TotalMinutes / this.hours.Count;
 
-        for(int i = 0; i < this.hours.Count ; i++)
+        for (int i = 0; i < this.hours.Count; i++)
         {
             var t = dt.AddMinutes(-(turm * i));
             this.hours[i].text = t.ToString("HH:mm");
@@ -143,6 +144,8 @@ public class UILineRenderer2 : MaskableGraphic
 
     public void UpdateControlPoints(List<float> points)
     {
+
+        //ui 구성이 완료되지 않았다면 지연
         (float min, float max) dotRangeOfX = GetDotRangeOfX();
         if (dotRangeOfX.max - dotRangeOfX.min < 0.1f)
         {
@@ -153,105 +156,51 @@ public class UILineRenderer2 : MaskableGraphic
         if (controlPointsObjects.Count != points.Count) SetDotAmount(points.Count);
 
         controlPoints.Clear();
-
-        DetailToxinBar parentBar = GetComponentInParent<DetailToxinBar>();
-        if (parentBar == null || parentBar.chartArea == null)
-        {
-            Debug.LogError("chartArea를 찾을 수 없습니다!");
-            return;
-        }
-
-        RectTransform chartRect = parentBar.chartArea;
-
         for (int i = 0; i < this.controlPointsObjects.Count; i++)
         {
-            if (i >= points.Count) break;
-
+            if (i >= points.Count)
+                break;
             if (this.controlPointsObjects[i] != null)
             {
-                RectTransform dotRect = this.controlPointsObjects[i].GetComponent<RectTransform>();
-
-                // Chart_Dots의 실제 하단/상단 월드 좌표
-                Vector3 chartBottomWorld = chartRect.TransformPoint(new Vector2(0, chartRect.rect.yMin));
-                Vector3 chartTopWorld = chartRect.TransformPoint(new Vector2(0, chartRect.rect.yMax));
-
-                // 목표 Y 위치 (월드 좌표)
-                Vector3 targetWorldPos = Vector3.Lerp(chartBottomWorld, chartTopWorld, points[i]);
-
-                // 기존 X 위치는 유지 (월드 좌표)
-                Vector3 currentWorldPos = dotRect.position;
-                targetWorldPos.x = currentWorldPos.x;
-                targetWorldPos.z = currentWorldPos.z;
-
-                //  월드 좌표로 직접 설정 (Anchor 무관!)
-                dotRect.position = targetWorldPos;
-
-                // 선 그리기용 좌표 변환
-                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
-                    canvas.worldCamera,
-                    this.controlPointsObjects[i].position);
-
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, this.controlPointsObjects[i].position);
                 Vector2 localPoint;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    rectTransform,
-                    screenPoint,
-                    canvas.worldCamera,
-                    out localPoint);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPoint, canvas.worldCamera, out localPoint);
+                localPoint.y = -this.GetComponent<RectTransform>().sizeDelta.y - (-this.GetComponent<RectTransform>().sizeDelta.y * points[i]) + (this.GetComponent<RectTransform>().sizeDelta.y / 2);
+
+                Vector2 vPos = this.controlPointsObjects[i].GetComponent<RectTransform>().anchoredPosition;
+                vPos.y = localPoint.y + (this.GetComponent<RectTransform>().sizeDelta.y / 2);
+                this.controlPointsObjects[i].GetComponent<RectTransform>().anchoredPosition = vPos;
 
                 controlPoints.Add(localPoint);
             }
         }
+        //this.SetHours();
     }
 
     public void UpdateControlPoints(DateTime dt, List<float> points)
     {
         controlPoints.Clear();
-
-        DetailToxinBar parentBar = GetComponentInParent<DetailToxinBar>();
-        if (parentBar == null || parentBar.chartArea == null)
-        {
-            Debug.LogError("chartArea를 찾을 수 없습니다!");
-            return;
-        }
-
-        RectTransform chartRect = parentBar.chartArea;
-
         for (int i = 0; i < this.controlPointsObjects.Count; i++)
         {
-            if (i >= points.Count) break;
-
+            if (i >= points.Count)
+                break;
             if (this.controlPointsObjects[i] != null)
             {
-                RectTransform dotRect = this.controlPointsObjects[i].GetComponent<RectTransform>();
-
-                Vector3 chartBottomWorld = chartRect.TransformPoint(new Vector2(0, chartRect.rect.yMin));
-                Vector3 chartTopWorld = chartRect.TransformPoint(new Vector2(0, chartRect.rect.yMax));
-
-                Vector3 targetWorldPos = Vector3.Lerp(chartBottomWorld, chartTopWorld, points[i]);
-
-                Vector3 currentWorldPos = dotRect.position;
-                targetWorldPos.x = currentWorldPos.x;
-                targetWorldPos.z = currentWorldPos.z;
-
-                dotRect.position = targetWorldPos;
-
-                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(
-                    canvas.worldCamera,
-                    this.controlPointsObjects[i].position);
-
+                Vector2 screenPoint = RectTransformUtility.WorldToScreenPoint(canvas.worldCamera, this.controlPointsObjects[i].position);
                 Vector2 localPoint;
-                RectTransformUtility.ScreenPointToLocalPointInRectangle(
-                    rectTransform,
-                    screenPoint,
-                    canvas.worldCamera,
-                    out localPoint);
+                RectTransformUtility.ScreenPointToLocalPointInRectangle(rectTransform, screenPoint, canvas.worldCamera, out localPoint);
+                localPoint.y = -this.GetComponent<RectTransform>().sizeDelta.y - (-this.GetComponent<RectTransform>().sizeDelta.y * points[i]) + (this.GetComponent<RectTransform>().sizeDelta.y / 2);
+
+                Vector2 vPos = this.controlPointsObjects[i].GetComponent<RectTransform>().anchoredPosition;
+                vPos.y = localPoint.y + (this.GetComponent<RectTransform>().sizeDelta.y / 2);
+                this.controlPointsObjects[i].GetComponent<RectTransform>().anchoredPosition = vPos;
 
                 controlPoints.Add(localPoint);
             }
         }
-
         this.SetMins(dt);
     }
+
     private void DrawLines(VertexHelper vh, List<Vector2> points)
     {
         for (int i = 0; i < points.Count - 1; i++)

@@ -55,7 +55,7 @@ public class PanelVideoCCTV : MonoBehaviour
                 Debug.Log($"[PanelVideoCCTV] URL: {obs.src_video1}");
 
                 videoPlayerA.Path = obs.src_video1;
-                videoPlayerA.Prepare();
+               // videoPlayerA.Prepare();
 
                 Debug.Log($"[PanelVideoCCTV] ✅ Video_Player A Prepare 완료");
             }
@@ -78,7 +78,7 @@ public class PanelVideoCCTV : MonoBehaviour
                 Debug.Log($"[PanelVideoCCTV] URL: {obs.src_video2}");
 
                 videoPlayerB.Path = obs.src_video2;
-                videoPlayerB.Prepare();
+                //videoPlayerB.Prepare();
 
                 Debug.Log($"[PanelVideoCCTV] ✅ Video_Player B Prepare 완료");
             }

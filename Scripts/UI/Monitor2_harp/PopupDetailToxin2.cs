@@ -24,7 +24,7 @@ internal class PopupDetailToxin2 : MonoBehaviour
     public TMP_Text txtTotal;    // 경계 임계값
 
     [Header("차트 관련")]
-    public UILineRenderer2 line; // 트렌드 라인 차트
+    public UILineRenderer3 line; // 트렌드 라인 차트
     public List<TMP_Text> hours; // 시간축 라벨들
     public List<TMP_Text> verticals; // 세로축 라벨들
 
@@ -73,7 +73,6 @@ internal class PopupDetailToxin2 : MonoBehaviour
 
         // 차트 축 설정
         SetMins(DateTime.Now);
-        SetVertical(this.data.values.Max());
     }
 
     /// <summary>
@@ -93,14 +92,31 @@ internal class PopupDetailToxin2 : MonoBehaviour
     {
         if (data.values.Count == 0) return;
 
-        // 최대값 기준으로 정규화 (0~1 범위)
+        // ✅ 최대값과 최소값 모두 구하기
         var max = data.values.Max();
-        if (max <= 0) max = 1; // 0으로 나누기 방지
+        var min = data.values.Min();
 
-        var normalizedChart = data.values.Select(t => t / max).ToList();
+        // ✅ 음수가 있으면 min을 0 아래로 확장
+        if (min < 0)
+        {
+            // 음수 범위 고려
+        }
+        else
+        {
+            min = 0; // 양수만 있으면 0부터 시작
+        }
+
+        // ✅ min-max 범위로 정규화 (0~1 범위)
+        float range = max - min;
+        if (range <= 0) range = 1; // 0으로 나누기 방지
+
+        var normalizedChart = data.values.Select(t => (t - min) / range).ToList();
 
         // 라인 차트 업데이트
         line.UpdateControlPoints(normalizedChart);
+
+        // ✅ 세로축도 min~max 범위로 업데이트
+        SetVertical(min, max);
     }
 
     /// <summary>
@@ -135,18 +151,20 @@ internal class PopupDetailToxin2 : MonoBehaviour
     }
 
     /// <summary>
-    /// 세로축 설정 - 측정값 범위를 세로 라벨들에 분배
+    /// 세로축 설정 - 측정값 범위를 세로 라벨들에 분배 (음수 지원)
     /// </summary>
+    /// <param name="min">데이터 최소값</param>
     /// <param name="max">데이터 최대값</param>
-    private void SetVertical(float max)
+    private void SetVertical(float min, float max)
     {
-        // 세로축 간격 계산 (최대값+1을 라벨 개수로 나눔)
-        var verticalInterval = ((max + 1) / (verticals.Count - 1));
+        // min부터 max까지의 범위를 라벨 개수로 나눔
+        float range = max - min;
+        var verticalInterval = range / (verticals.Count - 1);
 
-        // 각 라벨에 측정값 범위 설정 (0부터 최대값까지)
+        // 각 라벨에 측정값 범위 설정 (min부터 max까지)
         for (int i = 0; i < verticals.Count; i++)
         {
-            var value = verticalInterval * i;
+            var value = min + (verticalInterval * i);
             verticals[i].text = Math.Round(value, 2).ToString(); // 소수점 2자리로 표시
         }
     }

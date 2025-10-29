@@ -116,18 +116,30 @@ public class ObsMonitoringItem : MonoBehaviour
         if (toxin == null) return;
         if (toxin.values.Count == 0) return;
 
-        List<float> normalizedValues = new();
+        // 최대값과 최소값 모두 구하기
+        var max = toxin.values.Max();
+        var min = toxin.values.Min();
 
-        // 정규화를 위한 최대값 계산 (+1은 차트가 맨 위에 붙지 않도록)
-        float max = toxin.values.Max() + 1;
+        // 음수가 있으면 min을 0 아래로 확장
+        if (min < 0)
+        {
+            // 음수 범위 고려 (그대로 사용)
+        }
+        else
+        {
+            min = 0; // 양수만 있으면 0부터 시작
+        }
 
-        // 모든 값을 0~1 범위로 정규화
-        toxin.values.ForEach(val => normalizedValues.Add(val / max));
+        // min-max 범위로 정규화 (0~1 범위)
+        float range = max - min;
+        if (range <= 0) range = 1; // 0으로 나누기 방지
+
+        List<float> normalizedValues = toxin.values.Select(t => (t - min) / range).ToList();
 
         // 트렌드 차트 업데이트
         trdSensor.UpdateControlPoints(normalizedValues);
 
         // 현재값 텍스트 업데이트
-        lblValue.text = "" + toxin.GetLastValue().ToString("F2");
+        lblValue.text = toxin.GetLastValue().ToString("F2");
     }
 }
