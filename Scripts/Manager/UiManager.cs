@@ -15,7 +15,8 @@ using static UiManager;
 
 public class UiManager : MonoBehaviour
 {
-    public ModelProvider modelProvider => ModelManager.Instance;
+    //public ModelProvider modelProvider => ModelManager.Instance;
+    public ModelProvider modelProvider => DummyDataProvider.Instance;
 
     public static UiManager Instance = null;
     private void Awake()
