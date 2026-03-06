@@ -1,4 +1,5 @@
-﻿using Onthesys;
+﻿using Assets.Scripts.Manager;
+using Onthesys;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,12 +8,11 @@ using System.Threading.Tasks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
-using static Unity.Burst.Intrinsics.X86.Avx;
 
 public class AreaListMonthItem : MonoBehaviour
 {
-    ModelProvider modelProvider => UiManager.Instance.modelProvider;
-    int areaId;
+    ModelProvider ModelProvider => UiManager.Instance.modelProvider;
+    int regionId;
 
     TMP_Text lblAreaName, lblPercentage;
     Image imgColor;
@@ -32,22 +32,22 @@ public class AreaListMonthItem : MonoBehaviour
         imgColor = transform.Find("Label_Colors").GetComponent<Image>();
     }
 
-    public void SetAreaData(Color color, int areaId, string areaName, int count, float percent)
+    public void SetAreaData(Color color, int regionId, string areaName, int obsCount, int alarmCount, float percent)
     {
-        Debug.Log($"SetAreaData 호출: {areaName} = {count}건");
+        //Debug.Log($"SetAreaData 호출: {areaName} = {count}건");
         imgColor.color = color;
-        this.areaId = areaId;
-        lblAreaName.text = areaName + $"(3)";
+        this.regionId = regionId;
+        lblAreaName.text = areaName + $"({obsCount})";
 
-        numDatas.ForEach(numData => numData.ForcedUpdateView(count));
+        numDatas.ForEach(numData => numData.ForcedUpdateView(alarmCount));
 
         lblPercentage.text = "" + Mathf.FloorToInt(percent * 100f) + " %";
     }
 
     void OnClick()
     {
-        if (areaId < 1) return;
-        UiManager.Instance.Invoke(UiEventType.NavigateArea, areaId);
+        if (regionId < 1) return;
+        UiManager.Instance.Invoke(UiEventType.NavigateRegion, regionId);
     }
 
 }

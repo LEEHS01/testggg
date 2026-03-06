@@ -11,6 +11,7 @@ using Unity.VisualScripting.Antlr3.Runtime;
 using UnityEngine;
 using static UnityEngine.Rendering.DebugUI;
 using UnityEngine.UI;
+using legacy;
 
 /// <summary>
 /// 상세 독성 차트 바 - 개별 센서의 시계열 데이터 차트 + 툴팁 + 기간 선택
@@ -116,7 +117,7 @@ internal class DetailToxinBar : MonoBehaviour
     {
         if (toxinData == null) return;
 
-        if (toxinData.values.Count == 0)
+        if (toxinData.chartValues.Count == 0)
             toxinData = modelProvider.GetToxin(toxinData.boardid, toxinData.hnsid);
 
         UpdateQueryTime();
@@ -124,16 +125,17 @@ internal class DetailToxinBar : MonoBehaviour
 
         List<float> normalizedValues = new();
         float max = toxinData.chartValues.Max();
-
         float normalizeMax = max + 1;
 
         if (max <= 0)
         {
-            toxinData.values.ForEach(val => normalizedValues.Add(0f));
+            // ✅ chartValues 사용!
+            toxinData.chartValues.ForEach(val => normalizedValues.Add(0f));
         }
         else
         {
-            toxinData.values.ForEach(val => normalizedValues.Add(val / normalizeMax));
+            // ✅ chartValues 사용!
+            toxinData.chartValues.ForEach(val => normalizedValues.Add(val / normalizeMax));
         }
 
         line.UpdateControlPoints(normalizedValues);
@@ -187,11 +189,11 @@ internal class DetailToxinBar : MonoBehaviour
 
         if (max <= 0)
         {
-            toxinData.values.ForEach(val => normalizedValues.Add(0f));
+            toxinData.chartValues.ForEach(val => normalizedValues.Add(0f));
         }
         else
         {
-            toxinData.values.ForEach(val => normalizedValues.Add(val / normalizeMax));
+            toxinData.chartValues.ForEach(val => normalizedValues.Add(val / normalizeMax));
         }
 
         SetVertical(max);
@@ -338,12 +340,22 @@ internal class DetailToxinBar : MonoBehaviour
     /// </summary>
     private void SetVertical(float max)
     {
+        // ⭐ max가 0이면 모든 라벨을 0으로
+        if (max <= 0)
+        {
+            for (int i = 0; i < this.verticals.Count; i++)
+            {
+                this.verticals[i].text = "0";
+            }
+            return;
+        }
+
         var verticalMax = max + 1;
 
         for (int i = 0; i < this.verticals.Count; i++)
         {
             float ratio = ((float)this.verticals.Count - i - 1) / (verticals.Count - 1);
-            this.verticals[i].text = Math.Round((verticalMax * ratio)).ToString();
+            this.verticals[i].text = (verticalMax * ratio).ToString("F2");
         }
     }
 

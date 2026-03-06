@@ -1,4 +1,5 @@
-﻿using Onthesys;
+﻿using legacy;
+using Onthesys;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,9 +83,26 @@ internal class ToxinBar2 : MonoBehaviour
         this.sensorStatus = status;
         this.obsId = obsId;
 
+        float currentValue = toxin.GetLastValue();
+
+        // ⭐⭐⭐ 디버깅 로그 추가 - 여기!
+        Debug.Log($"========== [ToxinBar2 디버깅] ==========");
+        Debug.Log($"센서명: {toxin.hnsName}");
+        Debug.Log($"현재값(GetLastValue): {currentValue}");
+        Debug.Log($"경계 임계값(serious): {toxin.serious}");  // ⭐ 이거 추가
+        Debug.Log($"경보 임계값(warning): {toxin.warning}");
+        Debug.Log($"전달받은 status 파라미터: {status}");
+        Debug.Log($"toxin.status: {toxin.status}");
+        Debug.Log($"values 개수: {toxin.values?.Count ?? 0}");
+        if (toxin.values != null && toxin.values.Count > 0)
+        {
+            Debug.Log($"values 마지막 값: {toxin.values[toxin.values.Count - 1]}");
+        }
+        Debug.Log($"=====================================");
+
         // UI 라벨 업데이트
         lblSensorName.text = toxin.hnsName;                                // 센서명
-        lblValue.text = "" + toxin.GetLastValue().ToString("F2");          // 최신 측정값 (소수점 2자리)
+        lblValue.text = "" + currentValue.ToString("F2");                  // 최신 측정값 (소수점 2자리)
         lblUnit.text = toxin.unit ?? "";                                   // 측정 단위
 
         // 센서 활성화 여부에 따라 표시/숨김

@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using legacy;
 using Onthesys;
 using System;
 using System.Collections.Generic;
@@ -135,6 +136,8 @@ public class ObsMonitoring : MonoBehaviour
 
         ToxinStatus status = modelProvider.GetObsStatus(obsId);
         SetTitleStatus(status);
+        UpdateBoardImageStatusOptimized();
+
     }
 
     /// <summary>
@@ -334,14 +337,18 @@ public class ObsMonitoring : MonoBehaviour
     /// <summary>
     /// 특정 보드에 설비이상 알람이 있는지 확인
     /// </summary>
+    // ObsMonitoring.cs의 HasBoardError에 디버그 추가
     private bool HasBoardError(int boardId)
     {
         var activeAlarms = modelProvider.GetActiveAlarms();
 
+        Debug.Log($"[HasBoardError] 활성 알람 수: {activeAlarms.Count}");
+        activeAlarms.ForEach(a => Debug.Log($"  - obsId={a.obsId}, boardId={a.boardId}, status={a.status}"));
+
         return activeAlarms.Any(alarm =>
             alarm.obsId == obsId &&
             alarm.boardId == boardId &&
-            alarm.status == 0); // 설비이상 = 0
+            alarm.status == 0);
     }
 
     /// <summary>

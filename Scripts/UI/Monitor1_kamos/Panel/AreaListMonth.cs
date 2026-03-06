@@ -1,4 +1,5 @@
 ﻿using DG.Tweening;
+using legacy;
 using Onthesys;
 using System;
 using System.Collections.Generic;
@@ -15,6 +16,7 @@ public class AreaListMonth : MonoBehaviour
     List<AreaListMonthItem> items = new();
     List<Image> imgRingCharts = new();
     TMP_Text titleText;
+
     private void Start()
     {
         var items = transform.Find("List_Panel").GetComponentsInChildren<AreaListMonthItem>();
@@ -65,11 +67,11 @@ public class AreaListMonth : MonoBehaviour
                 (int, int) alarmYearly = alarmMonthlyList[i];
                 AreaData area = modelProvider.GetArea(alarmYearly.Item1);
                 float percent = (float)alarmYearly.Item2 / sum;
-                item.SetAreaData(imgRingCharts[i].color, area.areaId, area.areaName, alarmYearly.Item2, percent);
-            }
-            else
-            {
-                item.SetAreaData(imgRingCharts[i].color, -1, "-", 0, 0);
+            //    item.SetAreaData(imgRingCharts[i].color, area.areaId, area.areaName, alarmYearly.Item2, percent);
+            //}
+            //else
+            //{
+            //    item.SetAreaData(imgRingCharts[i].color, -1, "-", 0, 0);
             }
 
         }

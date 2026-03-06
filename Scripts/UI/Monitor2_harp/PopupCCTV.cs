@@ -13,6 +13,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using UMP;
 using Unity.VisualScripting;
+using legacy;
 
 public class PopupCCTV : MonoBehaviour
 {
@@ -67,7 +68,7 @@ public class PopupCCTV : MonoBehaviour
     {
         int currentObsId = modelProvider.GetCurrentObsId();
 
-        if (currentObsId <= 0)
+        if (currentObsId < 0)
         {
             Debug.LogWarning("[PopupCCTV] 선택된 관측소가 없습니다!");
             return;

@@ -1,4 +1,5 @@
-﻿using Onthesys;
+﻿using legacy;
+using Onthesys;
 using UMP;
 using UnityEngine;
 
@@ -9,6 +10,12 @@ public class PanelVideoCCTV : MonoBehaviour
     UniversalMediaPlayer videoPlayerA;
     UniversalMediaPlayer videoPlayerB;
 
+    // ⭐ 버튼 참조 추가
+    private GameObject btnPlayA;
+    private GameObject btnPauseA;
+    private GameObject btnPlayB;
+    private GameObject btnPauseB;
+
     private int currentObsId = -1;
 
     private void Awake()
@@ -16,8 +23,53 @@ public class PanelVideoCCTV : MonoBehaviour
         videoPlayerA = transform.Find("Video_Player A")?.GetComponentInChildren<UniversalMediaPlayer>();
         videoPlayerB = transform.Find("Video_Player B")?.GetComponentInChildren<UniversalMediaPlayer>();
 
+        // ⭐ 버튼 찾기 (경로 확인 필요!)
+        var buttonsA = transform.Find("Video_Player A/Buttons");
+        if (buttonsA != null)
+        {
+            btnPlayA = buttonsA.Find("Btn_Play")?.gameObject;
+            btnPauseA = buttonsA.Find("Btn_Pause")?.gameObject;
+        }
+
+        var buttonsB = transform.Find("Video_Player B/Buttons");
+        if (buttonsB != null)
+        {
+            btnPlayB = buttonsB.Find("Btn_Play")?.gameObject;
+            btnPauseB = buttonsB.Find("Btn_Pause")?.gameObject;
+        }
+
         if (videoPlayerA == null) Debug.LogError("[PanelVideoCCTV] Video_Player A를 찾을 수 없습니다!");
         if (videoPlayerB == null) Debug.LogError("[PanelVideoCCTV] Video_Player B를 찾을 수 없습니다!");
+    }
+
+    // ⭐⭐⭐ OnEnable: 버튼 상태만 초기화 (Path는 건드리지 않음!)
+    private void OnEnable()
+    {
+        Debug.Log("[PanelVideoCCTV] OnEnable - 버튼 상태 초기화");
+        ResetButtonStates();
+    }
+
+    // ⭐ OnDisable: 비디오 정지
+    private void OnDisable()
+    {
+        Debug.Log("[PanelVideoCCTV] OnDisable - 비디오 정지");
+
+        if (videoPlayerA != null)
+            videoPlayerA.Stop();
+
+        if (videoPlayerB != null)
+            videoPlayerB.Stop();
+    }
+
+    // ⭐ 버튼 상태만 초기화
+    private void ResetButtonStates()
+    {
+        if (btnPlayA != null) btnPlayA.SetActive(true);
+        if (btnPauseA != null) btnPauseA.SetActive(false);
+        if (btnPlayB != null) btnPlayB.SetActive(true);
+        if (btnPauseB != null) btnPauseB.SetActive(false);
+
+        Debug.Log("[PanelVideoCCTV] 버튼 상태 초기화 완료");
     }
 
     public void SetObservatory(int obsId)
@@ -29,6 +81,10 @@ public class PanelVideoCCTV : MonoBehaviour
         }
 
         currentObsId = obsId;
+
+        // ⭐ 여기서 버튼 초기화 (SetObservatory 호출 시마다)
+        ResetButtonStates();
+
         LoadCCTV(obsId);
     }
 
@@ -44,54 +100,19 @@ public class PanelVideoCCTV : MonoBehaviour
 
         Debug.Log($"[PanelVideoCCTV] ===== CCTV 로딩 시작 =====");
         Debug.Log($"[PanelVideoCCTV] 관측소: {obs.obsName} (ID: {obsId})");
-        Debug.Log($"[PanelVideoCCTV] Video A URL: {obs.src_video1}");
-        Debug.Log($"[PanelVideoCCTV] Video B URL: {obs.src_video2}");
 
-        if (videoPlayerA != null)
+        if (videoPlayerA != null && !string.IsNullOrEmpty(obs.src_video1))
         {
-            if (!string.IsNullOrEmpty(obs.src_video1))
-            {
-                Debug.Log($"[PanelVideoCCTV] Video_Player A에 URL 설정 중...");
-                Debug.Log($"[PanelVideoCCTV] URL: {obs.src_video1}");
-
-                videoPlayerA.Path = obs.src_video1;
-               // videoPlayerA.Prepare();
-
-                Debug.Log($"[PanelVideoCCTV] ✅ Video_Player A Prepare 완료");
-            }
-            else
-            {
-                Debug.LogWarning($"[PanelVideoCCTV] Video A URL이 비어있습니다!");
-            }
-        }
-        else
-        {
-            Debug.LogError($"[PanelVideoCCTV] videoPlayerA가 null입니다!");
+            videoPlayerA.Path = obs.src_video1;
+            Debug.Log($"[PanelVideoCCTV] Video A URL: {obs.src_video1}");
         }
 
-        // Video_Player B
-        if (videoPlayerB != null)
+        if (videoPlayerB != null && !string.IsNullOrEmpty(obs.src_video2))
         {
-            if (!string.IsNullOrEmpty(obs.src_video2))
-            {
-                Debug.Log($"[PanelVideoCCTV] Video_Player B에 URL 설정 중...");
-                Debug.Log($"[PanelVideoCCTV] URL: {obs.src_video2}");
-
-                videoPlayerB.Path = obs.src_video2;
-                //videoPlayerB.Prepare();
-
-                Debug.Log($"[PanelVideoCCTV] ✅ Video_Player B Prepare 완료");
-            }
-            else
-            {
-                Debug.LogWarning($"[PanelVideoCCTV] Video B URL이 비어있습니다!");
-            }
-        }
-        else
-        {
-            Debug.LogError($"[PanelVideoCCTV] videoPlayerB가 null입니다!");
+            videoPlayerB.Path = obs.src_video2;
+            Debug.Log($"[PanelVideoCCTV] Video B URL: {obs.src_video2}");
         }
 
-        Debug.Log($"[PanelVideoCCTV] ===== CCTV 로딩 요청 완료 =====");
+        Debug.Log($"[PanelVideoCCTV] ===== CCTV 로딩 완료 =====");
     }
 }

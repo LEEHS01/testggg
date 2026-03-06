@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Data;
+using legacy;
 using Onthesys;
 using System;
 using System.Collections;
@@ -218,7 +219,7 @@ internal class PopupDetailToxin : MonoBehaviour
                 }
                 else
                 {
-                    max = Mathf.Max(this.data.warning, processedValues.Max());
+                    max = processedValues.Max() + 1f;
                 }
             }
 
