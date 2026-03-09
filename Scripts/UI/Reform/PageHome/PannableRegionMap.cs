@@ -126,12 +126,13 @@ namespace Assets.Scripts.UI.Reform.PageHome
         }
 
 
-        void SetAnimation(float alpha, Vector3 toPos, float toScale, float duration)
+        public void SetAnimation(float alpha, Vector3 toPos, float toScale, float duration)
         {
             Color fromColor = imgBackground.color;
             Vector3 fromPos = GetComponent<RectTransform>().position;
             Vector3 fromScale = GetComponent<RectTransform>().localScale;
 
+            if(alpha >= 0)
             DOTween.ToAlpha(() => fromColor, x => fromColor = x, alpha, duration / 2f).OnUpdate(() =>
             {
                 imgBackground.color = fromColor;

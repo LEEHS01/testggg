@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+﻿/*using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using Onthesys;
@@ -147,4 +147,4 @@ public class PopupTableData : MonoBehaviour
     {
         panelTable.SetActive(false);
     }
-}
+}*/

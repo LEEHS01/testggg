@@ -18,7 +18,7 @@ using static Assets.Scripts.Info.BoardSpecInfo;
 internal class DbManager : MonoBehaviour
 {
     public static DbManager instance;
-    public static string db_url;// = "http://192.168.0.28:2000/";
+    public static string db_url;// = "http://192.168.10.236:2000/";
 
     static DbManager() {
         //string ip =  NetworkInterface.GetAllNetworkInterfaces()
@@ -503,7 +503,14 @@ internal class DbManager : MonoBehaviour
     }
     private async Task<TimeSeriesInfo> GetMeasTableRangeAsync(int obsIdx, DateTime fromDt, DateTime toDt, CancellationToken ct = default)
     {
-        var query = $"Select * from TB_HNS_DATA_MEAS Where {fromDt: yyyyMMddHHmmss} <= MEAS_DT and MEAS_DT <= {toDt: yyyyMMddHHmmss} and OBS_IDX = {obsIdx};";
+        //var query = $"Select * from TB_HNS_DATA_MEAS Where {fromDt: yyyyMMddHHmmss} <= MEAS_DT and MEAS_DT <= {toDt: yyyyMMddHHmmss} and OBS_IDX = {obsIdx};";
+
+        var query = $"EXEC EXEC_EXTRACT_TIME_SERIES_MEAS" +
+            $"    @OBS_IDX = {obsIdx}," +
+            $"    @FROM_DT = '{fromDt:yyyyMMddHHmmss}'," +
+            $"    @TO_DT = '{toDt:yyyyMMddHHmmss}';";
+
+
         string response = await ResponseAPIStringAsync(QueryType.SELECT.ToString(), query, ct);
 
         // 서버가 "Error: ..." 문자열로 내려주는 형태를 그대로 쓰고 있어서,
@@ -513,7 +520,7 @@ internal class DbManager : MonoBehaviour
 
         // JSON 파싱이 크면 메인 스레드에서 잠깐 튈 수 있음 → Task.Run으로 분리 가능
         // (Unity API 호출 없음 = 안전)
-        Debug.Log("query : " + query);
+        //Debug.Log("query : " + query);
         var entity = await Task.Run(() =>
             JsonConvert.DeserializeObject<List<HnsDataMeasData>>(response), ct);
         //Debug.Log(response);

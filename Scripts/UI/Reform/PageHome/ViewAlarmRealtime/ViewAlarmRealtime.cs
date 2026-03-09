@@ -12,17 +12,25 @@ namespace Assets.Scripts.UI.Reform.PageHome
 {
     public class ViewAlarmRealtime : MonoBehaviour
     {
+        private bool isInitiated = false;
+
         ModelProvider modelProvider => UiManager.Instance.modelProvider;
         GameObject prefab => Resources.Load<GameObject>("Reform/PageHome/ViewAlarmRealtimeItem");
 
         private void Start()
+        {   
+            UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
+            UiManager.Instance.Register(UiEventType.ChangeAlarmList, OnChangeAlarmList);
+        }
+
+        private void OnInitiate(object obj)
         {
-           UiManager.Instance.Register(UiEventType.ChangeAlarmList, OnChangeAlarmList);
+            isInitiated = true;
         }
 
         public void Update()
         {
-            if (Time.time % 10 != (Time.time + Time.deltaTime) % 10) // Update every 10 seconds
+            if (Time.time % 10 != (Time.time + Time.deltaTime) % 10 && isInitiated) // Update every 10 seconds
             {
                 OnChangeAlarmList(null);
             }

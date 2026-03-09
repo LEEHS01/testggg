@@ -77,7 +77,7 @@ namespace Assets.Scripts.Manager
                 return;
             }
 
-            bool isInitiated = obss.Count != 0 && groups.Count != 0 && alarmsWhole.Count != 0;
+            bool isInitiated = obss.Count != 0 && groups.Count != 0;//alarmsWhole.Count != 0 조건 완화
 
             Debug.Log("AwaitInitiating 작동 중 ");
             if (!isInitiated)

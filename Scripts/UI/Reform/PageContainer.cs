@@ -1,4 +1,5 @@
 ﻿using Assets.Scripts.Manager;
+using DG.Tweening;
 using I18N.Common;
 using System;
 using System.Collections.Generic;
@@ -14,6 +15,8 @@ public class PageContainer : MonoBehaviour
     //페이지 제어
     public Page PageNow { get; private set; }
     public List<Page> pages { get; private set; } = new List<Page>();
+
+    public Image imgBgr => GetComponent<Image>();
 
     private void Start()
     {
@@ -36,22 +39,33 @@ public class PageContainer : MonoBehaviour
 
     private void OnInitiate(object obj)
     {
-        pages.ForEach(page => page.Hide());
+        pages.ForEach(page => page.Hide(UiEventType.Initiate, UiEventType.NavigateHome));
         if (pages.Count > 0)
         {
             PageNow = pages[0];
-            PageNow.Show();
+            PageNow.Show(UiEventType.Initiate, UiEventType.NavigateHome);
         }
     }
 
     private void OnNavigatePage(UiEventType type, object obj)
     {
+        UiEventType from = PageNow != null ? PageNow.CallingEventType : UiEventType.Initiate;
         Debug.Log($"PageContainer - OnNavigatePage: {type}로 페이지 전환 요청 받음");
         pages.ForEach(page => 
         {
             Debug.Log($"PageContainer - OnNavigatePage: 처리중인 페이지 {page.name} (호출타입: {page.CallingEventType})");
-            Action func = page.CallingEventType != type ? page.Hide : page.Show;
-            func();
+            Action<UiEventType, UiEventType> func = page.CallingEventType != type ? page.Hide : page.Show;
+            func(from, type);
+            PageNow = page.CallingEventType == type ? page : PageNow;
+
         });
+
+
+
+        Color fromColor = imgBgr.color;
+        DOTween.ToAlpha(() => fromColor, x => fromColor = x, type == UiEventType.NavigateObs? 0f : 1f, 0.3f).OnUpdate(() =>
+            imgBgr.color = fromColor
+        );
+
     }
 }

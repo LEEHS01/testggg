@@ -14,11 +14,6 @@ namespace Assets.Scripts.UI.Reform.PageHistory
 {
     internal class ViewAlarmList : MonoBehaviour
     {
-        //참고용
-        AlarmList a;
-
-
-
         ModelProvider modelProvider => UiManager.Instance.modelProvider;
 
         // 기존 코드와 동일하게 유지

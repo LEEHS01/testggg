@@ -23,16 +23,25 @@ namespace Assets.Scripts.UI.Reform.PageObservatory
         List<GroupInfo> groups;
         List<AlarmInfo> alarmsActivated;
 
+        bool isInit = false, isFilled = false;
+
         private void Start()
         {
             listPanel = transform.Find("Scroll View").Find("Viewport").Find("List_Panel").GetComponent<RectTransform>();
 
             UiManager.Instance.Register(UiEventType.Initiate, OnInitiated);
-
         }
 
         void OnInitiated(object obj)
         {
+            isInit = true;
+        }
+        private void Update()
+        {
+            if (isInit == isFilled) return;
+
+            isFilled = true;
+
             obss = modelProvider.GetObss();
             groups = modelProvider.GetGroups();
             alarmsActivated = modelProvider.GetAlarmsActivated();

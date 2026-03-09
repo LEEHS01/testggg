@@ -140,7 +140,8 @@ namespace Assets.Scripts.UI.Reform.PageObservatory
                 {
                     ObservatoryInfo.BoardInfo board = kvp.info;
                     BoardSpecInfo spec = modelProvider.GetBoardSpecs().Find(spec => spec.modelCode == board.modelCode);
-
+                    if(spec == null) return false;
+                    if(spec.sensorsDefinitionMap == null) return false;
                     return spec.sensorsDefinitionMap.TryGetValue(sensor.idx, out var sensorDef);
                 }).ToList();
                 BoardSpecInfo.BoardType? boardType = tBoards.Count == 1? tBoards.First().type : null;

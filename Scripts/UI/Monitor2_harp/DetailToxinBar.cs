@@ -34,7 +34,7 @@ internal class DetailToxinBar : MonoBehaviour
 
     [Header("Table Popup")]
     public UnityEngine.UI.Button btnShowTable;              // 표 보기 버튼
-    public PopupTableData popupTableData;    // 팝업 참조
+    //public PopupTableData popupTableData;    // 팝업 참조
 
 
     #region 툴팁 컴포넌트
@@ -82,14 +82,14 @@ internal class DetailToxinBar : MonoBehaviour
             return;
         }
 
-        if (popupTableData != null)
+        /*if (popupTableData != null)
         {
             popupTableData.ShowPopup(toxinData);
         }
         else
         {
             Debug.LogError("PopupTableData 참조가 연결되지 않았습니다!");
-        }
+        }*/
     }
 
     /// <summary>

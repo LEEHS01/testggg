@@ -48,6 +48,26 @@ namespace Assets.Scripts.UI.Reform.General
                 else 
                     Debug.LogError($"PageButtonsPanel - Start: 버튼 이름 매핑 실패: {name}");
             });
+
+            btnEventMap.Values.ToList().ForEach(type => UiManager.Instance.Register(type, OnNavigatePage));
+        }
+
+        Tween twnBtnPauser;
+        private void OnNavigatePage(object obj)
+        {
+            btns.ForEach(btn => btn.enabled = false);
+
+
+            if (twnBtnPauser != null) 
+            {
+                twnBtnPauser.Complete();
+                twnBtnPauser = null;
+            }
+
+            twnBtnPauser = DOTween.To(() => default, x => { }, string.Empty, 0.3f);
+            twnBtnPauser.onComplete += () => btns.ForEach(btn => btn.enabled = true);
+            twnBtnPauser.onComplete += () => twnBtnPauser = null;
+
         }
 
         private void Update()

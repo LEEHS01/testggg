@@ -108,7 +108,26 @@ namespace Assets.Scripts.UI.Reform.PageHome
                 ForEach(img => img.color = new(1, 1, 1, obsIdx != -1 ? 0.1f : 0.2f));
 
 
+            //// 관측소 선택시 확대
+            //Vector3 fromScale = GetComponent<RectTransform>().localScale;
 
+            //DOTween.To(() => fromScale, x => fromScale = x, Vector3.one * 3, 0.5f).OnUpdate(() =>
+            //{
+            //    GetComponent<RectTransform>().localScale = fromScale;
+            //});
+
+            //int selObsIdx = modelProvider.GetCurrentObsIdx();
+            //if (selObsIdx != -1)
+            //{
+
+            //    MarkerObservatoryMap marker = obsMarkers.Find(marker => marker.obsInfo.obsIdx == selObsIdx);
+
+            //    Vector3 fromPos = GetComponent<RectTransform>().position;
+            //    fromScale = GetComponent<RectTransform>().localScale;
+            //    Vector3 toPos = crosshairRectTransform.position - marker.GetComponent<RectTransform>().position + fromPos;
+
+            //    GetComponent<RectTransform>().position = toPos;
+            //}
         }
 
 
@@ -155,12 +174,13 @@ namespace Assets.Scripts.UI.Reform.PageHome
         }
 
 
-        void SetAnimation(float alpha, Vector3 toPos, float toScale, float duration)
+        public void SetAnimation(float alpha, Vector3 toPos, float toScale, float duration)
         {
             Color fromColor = imgBackground.color;
             Vector3 fromPos = GetComponent<RectTransform>().position;
             Vector3 fromScale = GetComponent<RectTransform>().localScale;
 
+            if(alpha >= 0)
             DOTween.ToAlpha(() => fromColor, x => fromColor = x, alpha, duration / 2f).OnUpdate(() =>
             {
                 imgBackground.color = fromColor;

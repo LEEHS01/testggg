@@ -22,7 +22,7 @@ namespace Assets.Scripts.UI.Reform.PageObservatory
         Image imgSensor;
 
         Vector2 defaultSizeDelta;
-
+        bool isInit = false;
         private void Start()
         {
             txtTop = transform.Find("txtTop").GetComponent<TMP_Text>();
@@ -34,6 +34,12 @@ namespace Assets.Scripts.UI.Reform.PageObservatory
             defaultSizeDelta = GetComponent<RectTransform>().sizeDelta;
 
             UiManager.Instance.Register(UiEventType.SelectObs, OnSelectObs);
+            UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
+        }
+
+        private void OnInitiate(object obj)
+        {
+            isInit = true;
         }
 
         void OnSelectObs(object obj)
@@ -50,9 +56,6 @@ namespace Assets.Scripts.UI.Reform.PageObservatory
             {
                 // 상태 코드 해석 필요
                 //TODO
-
-
-
 
                 txtTitle.text = 
                     $"'{spec.nameText}' 보드 정보";
@@ -88,11 +91,11 @@ namespace Assets.Scripts.UI.Reform.PageObservatory
                     $"상태 설명\t:  --- \r\n";
                 txtBottom.text = $"-";
 
-                imgSensor.gameObject.SetActive(false);
+                imgSensor.gameObject.SetActive(!isInit);
 
 
 
-                gameObject.SetActive(false);
+                gameObject.SetActive(!isInit);
                 GetComponent<RectTransform>().sizeDelta = new(0, 0);
             }
         }
