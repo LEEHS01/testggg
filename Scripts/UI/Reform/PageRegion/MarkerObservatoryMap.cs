@@ -119,14 +119,9 @@ namespace Assets.Scripts.UI.Reform.PageHome
                 if (isFocused && !isFocusedNow) OnPointerExit();
                 isFocused = isFocusedNow;
             }
-            if (Input.GetAxis("Mouse ScrollWheel") != 0)
-            {
-                //print("Lossy : " + GetComponent<RectTransform>().lossyScale.x);
-                //print("Local : " + GetComponent<RectTransform>().localScale.x);
-                GetComponent<RectTransform>().DOScale(2f * GetComponent<RectTransform>().localScale.x / GetComponent<RectTransform>().lossyScale.x, 0.1f);
-            }
-        
-        
+
+            GetComponent<RectTransform>().DOScale(2f * GetComponent<RectTransform>().localScale.x / GetComponent<RectTransform>().lossyScale.x, 0.1f);
+
         }
 
 

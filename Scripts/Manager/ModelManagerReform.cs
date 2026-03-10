@@ -103,6 +103,53 @@ namespace Assets.Scripts.Manager
             dbManager.GetAlarmsActivated(
                 callback: alarms => {
                     alarmsActivated = alarms;
+
+
+                    //privatic Data
+                    List<int> monthAlarmCntCurr = new();
+                    List<int> monthAlarmCntPrev = new();
+
+                    DateTime now = DateTime.Now;
+
+                    int currYear = now.Year;
+                    int currMonth = now.Month;
+
+                    DateTime prevMonthDate = now.AddMonths(-1);
+                    int prevYear = prevMonthDate.Year;
+                    int prevMonth = prevMonthDate.Month;
+
+                    // 각 월의 일 수
+                    int currDays = DateTime.DaysInMonth(currYear, currMonth);
+                    int prevDays = DateTime.DaysInMonth(prevYear, prevMonth);
+
+                    // 초기화
+                    monthAlarmCntCurr = Enumerable.Repeat(0, currDays).ToList();
+                    monthAlarmCntPrev = Enumerable.Repeat(0, prevDays).ToList();
+
+                    // 알람 카운팅
+                    foreach (var alarm in alarmsActivated)
+                    {
+                        DateTime t = alarm.occured.timestamp;
+
+                        // 현재월
+                        if (t.Year == currYear && t.Month == currMonth)
+                        {
+                            int dayIndex = t.Day - 1;
+                            monthAlarmCntCurr[dayIndex]++;
+                        }
+
+                        // 전월
+                        if (t.Year == prevYear && t.Month == prevMonth)
+                        {
+                            int dayIndex = t.Day - 1;
+                            monthAlarmCntPrev[dayIndex]++;
+                        }
+                    }
+
+                    this.monthAlarmCntPrev = monthAlarmCntPrev;
+                    this.monthAlarmCntCurr = monthAlarmCntCurr;
+
+
                     UiManager.Instance.Invoke(UiEventType.ChangeAlarmList, null);
                 },
                 onError: er => { });
@@ -933,6 +980,12 @@ namespace Assets.Scripts.Manager
         List<(DateTime timestamp, (float val, bool isMissing) value)> trendHistory = null;
 
 
+        //privatic Data
+        List<int> monthAlarmCntCurr = new();
+        List<int> monthAlarmCntPrev = new();
+
+
+
         #endregion [DataStructs]
 
         #region [ModelProvider]
@@ -972,6 +1025,11 @@ namespace Assets.Scripts.Manager
         }
 
         public AlarmInfo GetAlarmByIdx(int alarmIdx) => alarmsWhole.Find(alarm => alarm.alarmIdx == alarmIdx);
+
+        public ((int year, int month, List<int> cnts) prev, (int year, int month, List<int> cnts) cur) GetEventsComparisonInfo()
+        {
+            return ((DateTime.Now.AddMonths(-1).Year, DateTime.Now.AddMonths(-1).Month, monthAlarmCntPrev), (DateTime.Now.Year, DateTime.Now.Month, monthAlarmCntCurr));
+        }
 
 
 

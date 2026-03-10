@@ -1,5 +1,6 @@
 ﻿using Assets.Scripts.Info;
 using Assets.Scripts.Manager;
+using DG.Tweening;
 using NUnit.Framework.Constraints;
 using System;
 using System.Collections.Generic;
@@ -16,13 +17,77 @@ namespace Assets.Scripts.UI.Reform.PageHome
         GameObject itemPrefab => Resources.Load<GameObject>("Reform/PageHome/ViewRegionSimpleItem");
 
         ModelProvider modelProvider => UiManager.Instance.modelProvider;
+
+
+        private RectTransform rectTransform;
+        private Vector2 startAnchoredPos;
+        private bool hasInitPosition = false;
+
+        private Tween moveTween;
+
+
+
+
+
+
+
+
         private void Start()
         {
+            rectTransform = GetComponent<RectTransform>();
             UiManager.Instance.Register(UiEventType.Initiate, OnInitiated);
+
+            UiManager.Instance.Register(UiEventType.NavigateRegion, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateCctv, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateHistory, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateObs, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateSetting, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateHome, OnNavigateHome);
+
         }
+
+        private void OnDestroy()
+        {
+            moveTween?.Kill();
+        }
+
+        // 애니메이션
+        private void OnNavigateHome(object obj)
+        {
+            if (rectTransform == null || !hasInitPosition)
+                return;
+
+            moveTween?.Kill();
+            moveTween = rectTransform
+                .DOAnchorPos(startAnchoredPos, 0.5f)
+                .SetEase(Ease.OutCubic);
+        }
+
+        // 애니메이션
+        private void OnNavigateOut(object obj)
+        {
+            if (rectTransform == null)
+                return;
+
+            moveTween?.Kill();
+
+            Vector2 targetPos = rectTransform.anchoredPosition + new Vector2(400f, 0f);
+
+            moveTween = rectTransform
+                .DOAnchorPos(targetPos, 0.5f)
+                .SetEase(Ease.OutCubic);
+        }
+
 
         void OnInitiated(object obj) 
         {
+            if (rectTransform != null && !hasInitPosition)
+            {
+                startAnchoredPos = rectTransform.anchoredPosition;
+                hasInitPosition = true;
+            }
+
+
             List<ObservatoryInfo> obss = modelProvider.GetObss();
             List<GroupInfo> groups = modelProvider.GetGroups();
 
@@ -50,44 +115,46 @@ namespace Assets.Scripts.UI.Reform.PageHome
             //region = area = group;
             Transform itemContainer, generalSplitter, oceanSplitter, generatorSplitter;
             itemContainer = transform.Find("Scroll View").Find("Viewport").Find("List_Panel");
-            generalSplitter = itemContainer.Find("ListSplitterGeneral");
+            //generalSplitter = itemContainer.Find("ListSplitterGeneral");
             oceanSplitter = itemContainer.Find("ListSplitterOcean");
             generatorSplitter = itemContainer.Find("ListSplitterGenerator");
 
+            DOVirtual.DelayedCall(0.1f, () =>
+            {
+                //groupTypeObsMap[GroupInfo.GroupType.GENERAL].AsEnumerable().Reverse().ToList().ForEach(kvp => {
+                //    GameObject instant = Instantiate(itemPrefab, itemContainer.transform);
+                //    instant.GetComponent<ViewRegionSimpleItem>().SetValue(kvp.Key, kvp.Value);
+                //    instant.transform.SetSiblingIndex(generalSplitter.GetSiblingIndex() + 1);
+                //});
+                groupTypeObsMap[GroupInfo.GroupType.OCEAN].AsEnumerable().Reverse().ToList().ForEach(kvp =>
+                {
+                    GameObject instant = Instantiate(itemPrefab, itemContainer.transform);
+                    instant.GetComponent<ViewRegionSimpleItem>().SetValue(kvp.Key, kvp.Value);
+                    instant.transform.SetSiblingIndex(oceanSplitter.GetSiblingIndex() + 1);
+                });
+                groupTypeObsMap[GroupInfo.GroupType.NUCLEAR].AsEnumerable().Reverse().ToList().ForEach(kvp =>
+                {
+                    GameObject instant = Instantiate(itemPrefab, itemContainer.transform);
+                    instant.GetComponent<ViewRegionSimpleItem>().SetValue(kvp.Key, kvp.Value);
+                    instant.transform.SetSiblingIndex(generatorSplitter.GetSiblingIndex() + 1);
+                });
 
-            groupTypeObsMap[GroupInfo.GroupType.GENERAL].AsEnumerable().Reverse().ToList().ForEach(kvp => {
-                GameObject instant = Instantiate(itemPrefab, itemContainer.transform);
-                instant.GetComponent<ViewRegionSimpleItem>().SetValue(kvp.Key, kvp.Value);
-                instant.transform.SetSiblingIndex(generalSplitter.GetSiblingIndex() + 1);
+                //동적 크기 조정
+
+                VerticalLayoutGroup vLayout = itemContainer.GetComponent<VerticalLayoutGroup>();
+                RectTransform container = vLayout.GetComponent<RectTransform>();
+                int childCount = itemContainer.transform.childCount - groupTypeObsMap.Count;
+                float splitterHeight = container.transform.GetChild(0).GetComponent<RectTransform>().rect.height;
+                float itemHeight = childCount == 3 ? 0f : container.transform.GetChild(1).GetComponent<RectTransform>().rect.height;
+
+                container.sizeDelta = new Vector2(container.sizeDelta.x,
+                    splitterHeight * groupTypeObsMap.Count
+                    + itemHeight * childCount
+                    + vLayout.spacing * (childCount + groupTypeObsMap.Count - 1)
+                    - container.parent.GetComponent<RectTransform>().rect.height
+                    );
+
             });
-            groupTypeObsMap[GroupInfo.GroupType.OCEAN].AsEnumerable().Reverse().ToList().ForEach(kvp => {
-                GameObject instant = Instantiate(itemPrefab, itemContainer.transform);
-                instant.GetComponent<ViewRegionSimpleItem>().SetValue(kvp.Key, kvp.Value);
-                instant.transform.SetSiblingIndex(oceanSplitter.GetSiblingIndex() + 1);
-            });
-            groupTypeObsMap[GroupInfo.GroupType.NUCLEAR].AsEnumerable().Reverse().ToList().ForEach(kvp => {
-                GameObject instant = Instantiate(itemPrefab, itemContainer.transform);
-                instant.GetComponent<ViewRegionSimpleItem>().SetValue(kvp.Key, kvp.Value);
-                instant.transform.SetSiblingIndex(generatorSplitter.GetSiblingIndex() + 1);
-            });
-
-
-            //동적 크기 조정
-
-            VerticalLayoutGroup vLayout = itemContainer.GetComponent<VerticalLayoutGroup>();
-            RectTransform container = vLayout.GetComponent<RectTransform>();
-            int childCount = itemContainer.transform.childCount - groupTypeObsMap.Count;
-            float splitterHeight = container.transform.GetChild(0).GetComponent<RectTransform>().rect.height;
-            float itemHeight = childCount == 3 ? 0f : container.transform.GetChild(1).GetComponent<RectTransform>().rect.height;
-
-            container.sizeDelta = new Vector2(container.sizeDelta.x,
-                splitterHeight * groupTypeObsMap.Count
-                + itemHeight * childCount
-                + vLayout.spacing * (childCount + groupTypeObsMap.Count - 1)
-                - container.parent.GetComponent<RectTransform>().rect.height
-                );
-
-
 
         }
 

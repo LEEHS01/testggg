@@ -46,7 +46,7 @@ internal class DbManager : MonoBehaviour
 
     private void Start()
     {
-        db_url = PlayerPrefs.GetString("DB_URL", "127.0.0.1:2000/");
+        db_url = PlayerPrefs.GetString("DB_URL", "http://192.168.10.236:2000/");
         //GetObss(obss => {
         //    foreach (var obs in obss)
         //    {

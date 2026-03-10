@@ -8,6 +8,7 @@ using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -30,10 +31,10 @@ namespace Assets.Scripts.UI.Reform.PageHome
         float moveSpeed = 10f;
         float scrollSpeed = 0.1f;
 
-        float maxHorizontalMoveRange = 500f;  // 최대 확대 시 좌우 이동 거리
-        float maxVerticalMoveRange = 650f;    // 최대 확대 시 위아래 이동 거리
         float minScale = 0.8f;
-        float maxScale = 2.5f;
+        float maxScale = 5f;
+        float maxHorizontalMoveRange => maxScale * 500f;  // 최대 확대 시 좌우 이동 거리
+        float maxVerticalMoveRange => maxScale * 1000f;    // 최대 확대 시 위아래 이동 거리
 
         bool controlable = true;
 
@@ -46,41 +47,74 @@ namespace Assets.Scripts.UI.Reform.PageHome
         private void Start()
         {
             UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
+            UiManager.Instance.Register(UiEventType.ChangeAlarmList, OnChangeAlarmList);
             //markers = transform.Find("MarkerList").GetComponentsInChildren<MarkerRegionMap>(true).ToList();
             imgBackground = transform.Find("MapNationBackground").GetComponent<Image>();
 
             transform.Find("MapNationBackground").Find("PosRefPoint_1").TryGetComponent(out coordinateAnchor.first);
             transform.Find("MapNationBackground").Find("PosRefPoint_2").TryGetComponent(out coordinateAnchor.second);
         }
+
+        private void OnChangeAlarmList(object obj)
+        {
+            List<ObservatoryInfo> obss = modelProvider.GetObss();
+            List<GroupInfo> groups = modelProvider.GetGroups();
+            List<AlarmInfo> alarms = modelProvider.GetAlarmsActivated();
+
+
+            Transform markerContainer = transform.Find("MapNationBackground").Find("MarkerList");
+
+            for (int i = 0; i < markerContainer.childCount; i++)
+            {
+                Transform marker = markerContainer.GetChild(i);
+                MarkerRegionMap markerRegionMap = marker.GetComponent<MarkerRegionMap>();
+                if (alarms.Find(alarm => markerRegionMap.obssInGroup.Select(obs => obs.obsIdx).Contains(alarm.obsIdx)) == null)
+                    marker.gameObject.SetActive(false);
+                else
+                    marker.gameObject.SetActive(true);
+            }
+
+
+        }
+
         private void OnInitiate(object obj)
         {
             List<ObservatoryInfo> obss = modelProvider.GetObss();
             List<GroupInfo> groups = modelProvider.GetGroups();
-
-
-            //우선 그룹에 알맞는 관측소 매핑
-            List<(GroupInfo groupInfo, List<ObservatoryInfo> obsList)> groupedObsList;
-            groupedObsList = (List<(GroupInfo, List<ObservatoryInfo>)>)groups.Select(
-                groupInfo => {
-                    var list = obss.Where(obs => groupInfo.groupIdx == obs.groupIdx).ToList();
-                    return (groupInfo, list);
-                }).ToList();
+            List<AlarmInfo> alarms = modelProvider.GetAlarmsActivated();
 
             Transform markerContainer = transform.Find("MapNationBackground").Find("MarkerList");
-            groupedObsList.ForEach(groupedObs =>
-            {
-                GameObject instant = Instantiate(itemPrefab,markerContainer);
-                Vector2 coord = new Vector2(groupedObs.groupInfo.coordinate.X, groupedObs.groupInfo.coordinate.Y);
+            DOVirtual.DelayedCall(0.1f, () => { 
+                //우선 그룹에 알맞는 관측소 매핑
+                List<(GroupInfo groupInfo, List<ObservatoryInfo> obsList)> groupedObsList;
+                groupedObsList = (List<(GroupInfo, List<ObservatoryInfo>)>)groups.Select(
+                    groupInfo => {
+                        var list = obss.Where(obs => groupInfo.groupIdx == obs.groupIdx).ToList();
+                        return (groupInfo, list);
+                    }).ToList();
 
-                float scale = transform.Find("MapNationBackground").GetComponent<RectTransform>().lossyScale.x;
-                Vector2 consult = CoordinateToLocalPosition(coord);
-                instant.GetComponent<RectTransform>().localPosition = new Vector3(consult.x, consult.y, 0f) * scale;
+                groupedObsList.ForEach(groupedObs =>
+                {
+                    GameObject instant = Instantiate(itemPrefab,markerContainer);
+                    Vector2 coord = new Vector2(groupedObs.groupInfo.coordinate.X, groupedObs.groupInfo.coordinate.Y);
 
-                instant.GetComponent<MarkerRegionMap>().SetValue(groupedObs.groupInfo, groupedObs.obsList);
+                    float scale = transform.Find("MapNationBackground").GetComponent<RectTransform>().lossyScale.x;
+                    Vector2 consult = CoordinateToLocalPosition(coord);
+                    instant.GetComponent<RectTransform>().localPosition = new Vector3(consult.x, consult.y, 0f) * scale;
+
+                    instant.GetComponent<MarkerRegionMap>().SetValue(groupedObs.groupInfo, groupedObs.obsList);
+
+                    if (alarms.Find(alarm => groupedObs.obsList.Select(obs => obs.obsIdx).Contains(alarm.obsIdx)) == null) 
+                       instant.gameObject.SetActive(false);
+
+                });
             });
-
-
         }
+
+
+       
+
+
 
 
         #region [Util]
@@ -206,7 +240,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
         }
 
 
-        Vector3 ClampPosition(Vector3 position)
+        public Vector3 ClampPosition(Vector3 position)
         {
             float scale = (panelRectTransform.localScale.x - minScale) / (maxScale - minScale);
             float horizontalMoveRange = Mathf.Lerp(0, maxHorizontalMoveRange, scale);

@@ -367,22 +367,22 @@ namespace Assets.Scripts.UI.Reform.PageHistory
 
         void Update()
         {
-            bool isInChart = IsMouseInChartArea();
+            //bool isInChart = IsMouseInChartArea();
 
-            if (isInChart != wasMouseInChartArea)
-            {
-                Debug.Log(isInChart ? "🟢 차트 진입!" : "🔴 차트 퇴장!");
-                wasMouseInChartArea = isInChart;
-            }
+            //if (isInChart != wasMouseInChartArea)
+            //{
+            //    Debug.Log(isInChart ? "🟢 차트 진입!" : "🔴 차트 퇴장!");
+            //    wasMouseInChartArea = isInChart;
+            //}
 
-            if (isInChart)
-            {
-                CheckMouseHover();
-            }
-            else if (tooltip.activeInHierarchy)
-            {
-                HideTooltip();
-            }
+            //if (isInChart)
+            //{
+            //    CheckMouseHover();
+            //}
+            //else if (tooltip.activeInHierarchy)
+            //{
+            //    HideTooltip();
+            //}
         }
 
         /// <summary>

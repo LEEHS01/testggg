@@ -15,7 +15,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
     public class ViewRegionSimpleItem : MonoBehaviour
     {
         Button btn;
-        TMP_Text txtGroupName, txtObsCountNormal, txtObsCountExceed, txtObsCountMalfunction;
+        TMP_Text txtGroupName, txtObsCountCaution, txtObsCountWarning, txtObsCountMalfunction;
 
         GroupInfo groupInfo;
         List<ObservatoryInfo> obssInGroup;
@@ -25,13 +25,13 @@ namespace Assets.Scripts.UI.Reform.PageHome
         private void Start()
         {
             if (isStartCalled) return;
-            transform.Find("SignalLamps").Find("SignalLamp_Green").GetChild(0).TryGetComponent<TMP_Text>(out txtObsCountNormal);
-            transform.Find("SignalLamps").Find("SignalLamp_Red").GetChild(0).TryGetComponent<TMP_Text>(out txtObsCountExceed);
+            transform.Find("SignalLamps").Find("SignalLamp_Yellow").GetChild(0).TryGetComponent<TMP_Text>(out txtObsCountCaution);
+            transform.Find("SignalLamps").Find("SignalLamp_Red").GetChild(0).TryGetComponent<TMP_Text>(out txtObsCountWarning);
             transform.Find("SignalLamps").Find("SignalLamp_Purple").GetChild(0).TryGetComponent<TMP_Text>(out txtObsCountMalfunction);
             transform.Find("TitleName_Button").GetChild(0).TryGetComponent<TMP_Text>(out txtGroupName);
             TryGetComponent<Button>(out btn);
 
-            if (btn == null || txtObsCountNormal == null | txtObsCountExceed == null || txtObsCountMalfunction == null || txtGroupName == null)
+            if (btn == null || txtObsCountCaution == null | txtObsCountWarning == null || txtObsCountMalfunction == null || txtGroupName == null)
             {
                 Debug.LogError("ViewRegionSimpleItem: One or more components not found!");
             }
@@ -42,42 +42,60 @@ namespace Assets.Scripts.UI.Reform.PageHome
 
         public void SetValue(GroupInfo group, List<ObservatoryInfo> obssInGroup)
         {
-            if (btn == null || txtObsCountNormal == null | txtObsCountExceed == null || txtObsCountMalfunction == null || txtGroupName == null)
+            if (btn == null || txtObsCountCaution == null | txtObsCountWarning == null || txtObsCountMalfunction == null || txtGroupName == null)
                 Start();
 
             this.groupInfo = group;
             this.obssInGroup = obssInGroup;
 
-            Dictionary<string,int> groupTypes = new() { { "normal", 0 },{ "exceed", 0 },{ "malfunction", 0 } };
+            Dictionary<string,int> groupTypes = new() { { "caution", 0 },{ "warning", 0 },{ "malfunction", 0 } };
             obssInGroup.ForEach(o => {
 
                 //기능장애 관련 알람 판단...
-                //@TODO
+                if ( //설비이상 관측소 확인
+                    o.sensors.FindIndex(
+                        s =>
+                            new int[] {
+                                (int)AlarmState.COM_ERROR,
+                                (int)AlarmState.ETC_ERROR,
+                                (int)AlarmState.LIVE_ERROR,
+                            }
+                            .Contains<int>(s.info.alarmType)
+                        ) >= 0
+                    )
+                    groupTypes["malfunction"]++;
 
-                if (
-                //범위 초과 알람이 존재하는가?
+                else if ( //경보 관측소 확인
                     o.sensors.FindIndex(
                         s =>
                             new int[] { 
-                                (int)AlarmState.TH_HIGH, 
-                                (int)AlarmState.TH_LOW, 
                                 (int)AlarmState.TH_HIGH_2, 
                                 (int)AlarmState.TH_LOW_2 
                             }
                             .Contains<int>(s.info.alarmType)
                         ) >= 0
                     )
-                    //정상범위초과 관측소 1개 +
-                    groupTypes["exceed"]++;
-                else
-                    //정상 관측소 1개 +
-                    groupTypes["normal"]++;
+                    groupTypes["warning"]++;
+
+                else if ( //경계 관측소 확인
+                    o.sensors.FindIndex(
+                        s =>
+                            new int[] {
+                                (int)AlarmState.TH_HIGH,
+                                (int)AlarmState.TH_LOW,
+                            }
+                            .Contains<int>(s.info.alarmType)
+                        ) >= 0
+                    )
+                    groupTypes["caution"]++;
+
+                
             });
 
 
             txtGroupName.text = group.groupName;
-            txtObsCountNormal.text = $"{groupTypes["normal"]:D2}";
-            txtObsCountExceed.text = $"{groupTypes["exceed"]:D2}";
+            txtObsCountCaution.text = $"{groupTypes["caution"]:D2}";
+            txtObsCountWarning.text = $"{groupTypes["warning"]:D2}";
             txtObsCountMalfunction.text = $"{groupTypes["malfunction"]:D2}";
 
         }

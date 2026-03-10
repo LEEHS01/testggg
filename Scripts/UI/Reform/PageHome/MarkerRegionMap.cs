@@ -26,7 +26,8 @@ namespace Assets.Scripts.UI.Reform.PageHome
         Image imgColorableHead, imgColorableTail;
 
         GroupInfo groupInfo;
-        List<ObservatoryInfo> obssInGroup;
+        public List<ObservatoryInfo> obssInGroup;
+
 
         private void Start()
         {
@@ -103,12 +104,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
 
         private void Update()
         {
-            if (Input.GetAxis("Mouse ScrollWheel") != 0)
-            {
-                //print("Lossy : " + GetComponent<RectTransform>().lossyScale.x);
-                //print("Local : " + GetComponent<RectTransform>().localScale.x);
-                GetComponent<RectTransform>().DOScale(2f * GetComponent<RectTransform>().localScale.x / GetComponent<RectTransform>().lossyScale.x, 0.1f);
-            }
+            GetComponent<RectTransform>().DOScale(2f * GetComponent<RectTransform>().localScale.x / GetComponent<RectTransform>().lossyScale.x, 0.1f);
         }
 
 

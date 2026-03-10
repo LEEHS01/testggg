@@ -57,7 +57,7 @@ namespace Assets.Scripts.UI.Reform.Pages
                 regionMap.GetComponent<RectTransform>().position = pageRegion.positionValue;
                 regionMap.GetComponent<RectTransform>().localScale = Vector3.one * pageRegion.scaleValue;
 
-                regionMap.SetAnimation(-1,positionValue, scaleValue, MAP_MOVE_DURATION);
+                //regionMap.SetAnimation(-1,positionValue, scaleValue, MAP_MOVE_DURATION);
             }
         }
 

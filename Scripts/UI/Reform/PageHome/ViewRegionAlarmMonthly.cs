@@ -1,15 +1,15 @@
 ﻿using Assets.Scripts.Info;
 using Assets.Scripts.Manager;
+using Assets.Scripts.ModelsReform;
 using DG.Tweening;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using TMPro;
-using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
+using static Assets.Scripts.Info.BoardSpecInfo;
 
 namespace Assets.Scripts.UI.Reform.PageHome
 {
@@ -17,117 +17,173 @@ namespace Assets.Scripts.UI.Reform.PageHome
     {
         ModelProvider modelProvider => UiManager.Instance.modelProvider;
 
-        TMP_Text titleText;
-        List<Image> imgRingCharts = new();
-        List<AreaListMonthItem> items = new();
+        //TMP_Text titleText;
+        //List<Image> imgRingCharts = new();
+        //List<AreaListMonthItem> items = new();
 
+        // 등록 장비 현황
+        TMP_Text txtRegCntToxin, txtRegCntHns, txtRegCntWq;
+
+
+        // 장비 연결 상태
+        TMP_Text txtRegCntAll, txtRegCntNorm, txtRegCntAbnorm;
+        Image imgNormRatio;
+
+
+
+        private RectTransform rectTransform;
+        private Vector2 startAnchoredPos;
+        private bool hasInitPosition = false;
+
+        private Tween moveTween;
 
         private void Start()
         {
-            var items = transform.Find("List_Panel").GetComponentsInChildren<AreaListMonthItem>();
-            this.items.AddRange(items);
+            rectTransform = GetComponent<RectTransform>();
 
-            var charts = transform.Find("Doughnut Chart").GetComponentsInChildren<Image>();
-            imgRingCharts.AddRange(charts);
+            //var items = transform.Find("List_Panel").GetComponentsInChildren<AreaListMonthItem>();
+            //this.items.AddRange(items);
 
-            titleText = transform.Find("Title Text (TMP)").GetComponentInChildren<TMP_Text>();
+            //var charts = transform.Find("Doughnut Chart").GetComponentsInChildren<Image>();
+            //imgRingCharts.AddRange(charts);
+
+            //titleText = transform.Find("Title Text (TMP)").GetComponentInChildren<TMP_Text>();
+
+
+            txtRegCntToxin = transform.Find("PnlSensorsStatByType").Find("grpToxin").Find("txtCount").GetComponent<TMP_Text>();
+            txtRegCntHns = transform.Find("PnlSensorsStatByType").Find("grpHns").Find("txtCount").GetComponent<TMP_Text>();
+            txtRegCntWq = transform.Find("PnlSensorsStatByType").Find("grpWq").Find("txtCount").GetComponent<TMP_Text>();
+
+            txtRegCntAll = transform.Find("PnlSensorsStatByStatus").Find("ArcData").Find("txtProgress").GetComponent<TMP_Text>();
+            txtRegCntNorm = transform.Find("PnlSensorsStatByStatus").Find("ArcData").Find("txtNormal").GetComponent<TMP_Text>();
+            txtRegCntAbnorm = transform.Find("PnlSensorsStatByStatus").Find("ArcData").Find("txtAbnormal").GetComponent<TMP_Text>();
+            imgNormRatio = transform.Find("PnlSensorsStatByStatus").Find("ArcData").Find("imgProgress").GetComponent<Image>();
+
 
             UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
             UiManager.Instance.Register(UiEventType.ChangeAlarmList, OnChangeAlarm);
+
+            UiManager.Instance.Register(UiEventType.NavigateRegion, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateCctv, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateHistory, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateObs, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateSetting, OnNavigateOut);
+            UiManager.Instance.Register(UiEventType.NavigateHome, OnNavigateHome);
         }
 
+        private void OnDestroy()
+        {
+            moveTween?.Kill();
+        }
+
+        // 애니메이션
+        private void OnNavigateHome(object obj)
+        {
+            if (rectTransform == null || !hasInitPosition)
+                return;
+
+            moveTween?.Kill();
+            moveTween = rectTransform
+                .DOAnchorPos(startAnchoredPos, 0.5f)
+                .SetEase(Ease.OutCubic);
+        }
+
+        // 애니메이션
+        private void OnNavigateOut(object obj)
+        {
+            if (rectTransform == null)
+                return;
+
+            moveTween?.Kill();
+
+            Vector2 targetPos = rectTransform.anchoredPosition + new Vector2(-400f, 0f);
+
+            moveTween = rectTransform
+                .DOAnchorPos(targetPos, 0.5f)
+                .SetEase(Ease.OutCubic);
+        }
 
         private void OnChangeAlarm(object obj)
         {
-            //throw new NotImplementedException();
+            List<ObservatoryInfo> obss = modelProvider.GetObss();
+            List<GroupInfo> groups = modelProvider.GetGroups();
+            List<AlarmInfo> alarms = modelProvider.GetAlarmsWhole();
+            List<BoardSpecInfo> boardSpecs = modelProvider.GetBoardSpecs();
+
+            int cntToxin = 0, cntHns = 0, cntWq = 0;
+            int cntNorm = 0, cntAbnorm = 0;
+
+            List<(int obsIdx, int sensorIdx)> sensorList = new();
+
+
+            int cntAll = obss.Sum(o => o.boards.Sum(brd =>
+            {
+                if (brd.info.modelCode != "" && boardSpecs.Find(spec => spec.modelCode == brd.info.modelCode) != null)
+                {
+                    var brdSpec = boardSpecs.Find(spec => spec.modelCode == brd.info.modelCode);
+
+                    switch (brd.type)
+                    {
+                        case BoardType.TOXIN:
+                            cntToxin += brdSpec.sensorsDefinitionMap.Count;
+                            break;
+                        case BoardType.HNS:
+                            cntHns += brdSpec.sensorsDefinitionMap.Count;
+                            break;
+                        case BoardType.WQ:
+                            cntWq += brdSpec.sensorsDefinitionMap.Count;
+                            break;
+                    }
+
+                    brdSpec.sensorsDefinitionMap.Keys.ToList().ForEach(sensorIdx =>
+                    {
+                        sensorList.Add((o.obsIdx, sensorIdx));
+                    });
+
+
+                    return brdSpec.sensorsDefinitionMap.Count;
+                }
+                return 0;
+            }));
+
+
+            //AlarmState.SYSTEM_ERROR는 미할당에 해당하는 부분으로 제외. 통신이나 장비 단위의 에러가 아님
+            List<AlarmState> abnormalStates = new(){ AlarmState.COM_ERROR, AlarmState.LIVE_ERROR, AlarmState.ETC_ERROR, AlarmState.SYSTEM_ERROR };
+
+            sensorList.ForEach(addr => {
+
+
+
+                var s = obss.Find(o => o.obsIdx == addr.obsIdx).sensors.Find(s => s.idx == addr.sensorIdx).info;
+
+                Debug.Log($"{addr.obsIdx} / {addr.sensorIdx} / {(AlarmState)s.alarmType}");
+                if (abnormalStates.Contains((AlarmState)s.alarmType))
+                    cntAbnorm++;
+                else
+                    cntNorm++;
+            });
+
+            txtRegCntAbnorm.text = $"비정상 {cntAbnorm.ToString()}";
+            txtRegCntNorm.text = $"정상 작동 {cntNorm.ToString()}";
+            txtRegCntAll.text = $"총 관리 대수 {cntAll.ToString()}";
+            txtRegCntToxin.text = cntToxin.ToString();
+            txtRegCntHns.text = cntHns.ToString();
+            txtRegCntWq.text = cntWq.ToString();
+            imgNormRatio.fillAmount = cntAll != 0 ? (float)cntNorm / cntAll : 0f;
+            imgNormRatio.fillAmount = 0.1f + 0.8f * imgNormRatio.fillAmount; //시각적으로 10% 씩 말미가 있어서 10~90% 사이로 표현
         }
 
         private void OnInitiate(object obj)
         {
-            if (titleText != null)
+            if (rectTransform != null && !hasInitPosition)
             {
-                DateTime now = DateTime.Now;
-                string monthText = $"알람 발생 건수({now.Month}월)";
-                titleText.text = monthText;
+                startAnchoredPos = rectTransform.anchoredPosition;
+                hasInitPosition = true;
             }
 
-            List<ObservatoryInfo> obss = modelProvider.GetObss();
-            List<GroupInfo> groups = modelProvider.GetGroups();
-            List<AlarmInfo> alarms = modelProvider.GetAlarmsWhole();
-
-            //우선 그룹에 알맞는 관측소 매핑
-            List<(GroupInfo groupInfo, List<ObservatoryInfo> obsList)> groupedObsList;
-            groupedObsList = (List<(GroupInfo, List<ObservatoryInfo>)>)groups.Select(
-                groupInfo => {
-                    var list = obss.Where(obs => groupInfo.groupIdx == obs.groupIdx).ToList();
-                    return (groupInfo, list);
-                }).ToList();
-
-            //당월의 알람만 타겟
-            alarms = alarms.Where(alarm => alarm.occured.timestamp.Month == DateTime.Now.Month).ToList();
-
-            //카운팅작업
-            List<(int regionIdx, int count)> alarmMonthlyList = new();
-            groupedObsList.ForEach(groupedObs => {
-                int groupIdx = groupedObs.groupInfo.groupIdx;
-                int alarmCount = alarms.Where(alarm => groupedObs.obsList.Select(obs => obs.obsIdx).Contains(alarm.obsIdx)).Count();
-
-                alarmMonthlyList.Add((groupIdx, alarmCount));
-            });
-
-            //DB에서 받은 데이터가 없는 경우, 시연용 데이터로 대체
-            if (alarmMonthlyList.Count == 0)
-                alarmMonthlyList = new() {
-                (1,5),(2,3),(3,3),(4,2),(5,1),
-            };
-
-            //상위 5개 지역 5개를 선택23.0783348
-            alarmMonthlyList = alarmMonthlyList.OrderByDescending(item => item.count).ToList().GetRange(0, 5);
-
-            //상위 5개 지역의 알람 총계를 산출
-            int sum = Math.Max(alarmMonthlyList.Sum(item => item.count), 1);
-
-            //AreaListMonthItem 업데이트
-            for (int i = 0; i < items.Count; i++)
-            {
-                AreaListMonthItem item = items[i];
-
-                if (i < alarmMonthlyList.Count)
-                {
-                    (int, int) alarmMonthly = alarmMonthlyList[i];
-                    GroupInfo group = groups.Find(group => group.groupIdx == alarmMonthly.Item1);
-                    float percent = (float)alarmMonthly.Item2 / sum;
-                    int obsCount = groupedObsList.Find(groupedObs => groupedObs.groupInfo == group).obsList.Count;
-                    item.SetAreaData(imgRingCharts[i].color, group.groupIdx, group.groupName, obsCount, alarmMonthly.Item2, percent);
-                }
-                else
-                {
-                    item.SetAreaData(imgRingCharts[i].color, -1,"-", -1, 0, 0);
-                }
-
-            }
-
-
-            //RingChart 업데이트
-            const float fillRatioMin = 0.01f; // 최소 fillAmount 값
-
-            var duration = 1f;
-            var rotation = fillRatioMin;
-
-            for (int i = 0; i < items.Count; i++)
-            {
-                (int, int) alarmYearly = (i < alarmMonthlyList.Count) ? alarmMonthlyList[i] : (0, 0);
-
-                float p = (float)alarmYearly.Item2 / sum;
-
-                var setPercent = p < fillRatioMin ? fillRatioMin : p;
-                imgRingCharts[i].DOFillAmount(setPercent, duration);
-                imgRingCharts[i].transform.DOLocalRotate(new Vector3(0, 0, rotation), duration);
-
-                rotation -= (360 * setPercent);
-            }
-
+            OnChangeAlarm(obj);
         }
-
     }
 }
+
+

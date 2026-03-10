@@ -32,7 +32,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
         float scrollSpeed = 0.1f;
 
         float minScale = 0.8f;
-        float maxScale = 8f;
+        float maxScale = 5f;
         float maxHorizontalMoveRange => maxScale * 500f;  // 최대 확대 시 좌우 이동 거리
         float maxVerticalMoveRange => maxScale * 1000f;    // 최대 확대 시 위아래 이동 거리
 

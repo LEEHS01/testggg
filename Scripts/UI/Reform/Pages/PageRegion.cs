@@ -56,7 +56,7 @@ namespace Assets.Scripts.UI.Reform.Pages
                 obsMap.GetComponent<RectTransform>().position = pageHome.positionValue;
                 obsMap.GetComponent<RectTransform>().localScale = Vector3.one * pageHome.scaleValue;
 
-                obsMap.SetAnimation(-1, positionValue, scaleValue, MAP_MOVE_DURATION);
+                //obsMap.SetAnimation(-1, positionValue, scaleValue, MAP_MOVE_DURATION);
             }
         }
 

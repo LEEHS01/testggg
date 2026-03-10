@@ -128,6 +128,7 @@ namespace Assets.Scripts.Manager
         RequestHistoryTimeSeries,
         UpdateRealtimeTimeSeries,
         UpdateHistoryTimeSeries,
+        UpdateWeather,
     }
 
 }

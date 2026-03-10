@@ -20,7 +20,7 @@ public class TMGetTime : MonoBehaviour
         if (Time.time - lastUpdateTime >= updateInterval)
         {
             if (isHMSorYMD)
-                text.text = System.DateTime.Now.ToString("HH:mm:ss");
+                text.text = System.DateTime.Now.ToString("HH:mm");
             else
                 text.text = System.DateTime.Now.ToString("yyyy/MM/dd");
 

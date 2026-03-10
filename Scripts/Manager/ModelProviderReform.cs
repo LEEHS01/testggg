@@ -21,5 +21,7 @@ namespace Assets.Scripts.Manager
         public List<(DateTime timestamp, (float val, bool isMissing) value)> GetHistoryTimeSeriesInfo();
         public GroupInfo GetGroupByIdx(int groupIdx);
         public AlarmInfo GetAlarmByIdx(int alarmIdx);
+
+        public ((int year, int month, List<int> cnts) prev, (int year, int month, List<int> cnts) cur) GetEventsComparisonInfo();
     }
 }
