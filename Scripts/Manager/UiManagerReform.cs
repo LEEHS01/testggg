@@ -129,6 +129,7 @@ namespace Assets.Scripts.Manager
         UpdateRealtimeTimeSeries,
         UpdateHistoryTimeSeries,
         UpdateWeather,
+        SelectRegion,
     }
 
 }

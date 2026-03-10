@@ -54,33 +54,53 @@ namespace Assets.Scripts.UI.Reform.PageHome
             this.groupInfo = groupInfo;
             this.obssInGroup = obssInGroup;
 
-            Dictionary<string, int> groupTypes = new() { { "normal", 0 }, { "exceed", 0 }, { "malfunction", 0 } };
+            Dictionary<string, int> groupTypes = new() { { "caution", 0 }, { "warning", 0 }, { "malfunction", 0 } };
             obssInGroup.ForEach(o => {
 
                 //기능장애 관련 알람 판단...
-                //@TODO
-
-                if (
-                //범위 초과 알람이 존재하는가?
+                if ( //설비이상 관측소 확인
                     o.sensors.FindIndex(
                         s =>
                             new int[] {
-                                (int)AlarmState.TH_HIGH,
-                                (int)AlarmState.TH_LOW,
+                                (int)AlarmState.COM_ERROR,
+                                (int)AlarmState.ETC_ERROR,
+                                (int)AlarmState.LIVE_ERROR,
+                            }
+                            .Contains<int>(s.info.alarmType)
+                        ) >= 0
+                    )
+                    groupTypes["malfunction"]++;
+
+                else if ( //경보 관측소 확인
+                    o.sensors.FindIndex(
+                        s =>
+                            new int[] {
                                 (int)AlarmState.TH_HIGH_2,
                                 (int)AlarmState.TH_LOW_2
                             }
                             .Contains<int>(s.info.alarmType)
                         ) >= 0
                     )
-                    //정상범위초과 관측소 1개 +
-                    groupTypes["exceed"]++;
-                else
-                    //정상 관측소 1개 +
-                    groupTypes["normal"]++;
+                    groupTypes["warning"]++;
+
+                else if ( //경계 관측소 확인
+                    o.sensors.FindIndex(
+                        s =>
+                            new int[] {
+                                (int)AlarmState.TH_HIGH,
+                                (int)AlarmState.TH_LOW,
+                            }
+                            .Contains<int>(s.info.alarmType)
+                        ) >= 0
+                    )
+                    groupTypes["caution"]++;
             });
 
-            Color color = groupTypes["malfunction"]!= 0? Color.Lerp(Color.blue, Color.red, 0.5f) : groupTypes["malfunction"] != 0? Color.red : Color.green;
+            Color color = 
+                groupTypes["malfunction"]!= 0? Color.Lerp(Color.blue, Color.red, 0.5f) :
+                groupTypes["warning"] != 0 ? Color.red :
+                groupTypes["caution"] != 0 ? Color.yellow :
+                Color.green;
 
 
 
@@ -98,8 +118,9 @@ namespace Assets.Scripts.UI.Reform.PageHome
 
             //선택시 지역 화면으로 전환
             UiManager.Instance.Invoke(UiEventType.NavigateRegion);
-            if (obssInGroup.Count != 0) //관측소가 있다면 자동선택
-                UiManager.Instance.Invoke(UiEventType.SelectObs, obssInGroup.First().obsIdx);
+            //if (obssInGroup.Count != 0) //관측소가 있다면 자동선택
+            //    UiManager.Instance.Invoke(UiEventType.SelectObs, obssInGroup.First().obsIdx);
+            UiManager.Instance.Invoke(UiEventType.SelectRegion, groupInfo.groupIdx);
         }
 
         private void Update()

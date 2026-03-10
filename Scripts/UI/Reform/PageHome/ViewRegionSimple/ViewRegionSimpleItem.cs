@@ -106,10 +106,10 @@ namespace Assets.Scripts.UI.Reform.PageHome
 
             //선택시 지역 화면으로 전환
             UiManager.Instance.Invoke(UiEventType.NavigateRegion);
-            if (obssInGroup.Count != 0) //관측소가 있다면 자동선택
-                UiManager.Instance.Invoke(UiEventType.SelectObs, obssInGroup.First().obsIdx);
+            //if (obssInGroup.Count != 0) //관측소가 있다면 자동선택
+            //    UiManager.Instance.Invoke(UiEventType.SelectObs, obssInGroup.First().obsIdx);
 
-
+            UiManager.Instance.Invoke(UiEventType.SelectRegion, groupInfo.groupIdx);
         }
 
 

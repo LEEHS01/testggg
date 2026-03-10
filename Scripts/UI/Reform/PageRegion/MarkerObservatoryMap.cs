@@ -57,39 +57,67 @@ namespace Assets.Scripts.UI.Reform.PageHome
             this.groupInfo = groupInfo;
             this.obsInfo = obsInfo;
 
-            //Dictionary<string, int> groupTypes = new() { { "normal", 0 }, { "exceed", 0 }, { "malfunction", 0 } };
-            //obssInGroup.ForEach(o => {
+            Dictionary<string, int> groupTypes = new() { { "caution", 0 }, { "warning", 0 }, { "malfunction", 0 } };
 
-            //    //기능장애 관련 알람 판단...
-            //    //@TODO
+            var o = obsInfo;
 
-            //    if (
-            //    //범위 초과 알람이 존재하는가?
-            //        o.sensors.FindIndex(
-            //            s =>
-            //                new int[] {
-            //                    (int)AlarmState.TH_HIGH,
-            //                    (int)AlarmState.TH_LOW,
-            //                    (int)AlarmState.TH_HIGH_2,
-            //                    (int)AlarmState.TH_LOW_2
-            //                }
-            //                .Contains<int>(s.info.alarmType)
-            //            ) >= 0
-            //        )
-            //        //정상범위초과 관측소 1개 +
-            //        groupTypes["exceed"]++;
-            //    else
-            //        //정상 관측소 1개 +
-            //        groupTypes["normal"]++;
-            //});
+            //기능장애 관련 알람 판단...
+            if ( //설비이상 관측소 확인
+                o.sensors.FindIndex(
+                    s =>
+                        new int[] {
+                            (int)AlarmState.COM_ERROR,
+                            (int)AlarmState.ETC_ERROR,
+                            (int)AlarmState.LIVE_ERROR,
+                        }
+                        .Contains<int>(s.info.alarmType)
+                    ) >= 0
+                )
+                groupTypes["malfunction"]++;
 
-            //Color color = groupTypes["malfunction"]!= 0? Color.Lerp(Color.blue, Color.red, 0.5f) : groupTypes["malfunction"] != 0? Color.red : Color.green;
+            else if ( //경보 관측소 확인
+                o.sensors.FindIndex(
+                    s =>
+                        new int[] {
+                            (int)AlarmState.TH_HIGH_2,
+                            (int)AlarmState.TH_LOW_2
+                        }
+                        .Contains<int>(s.info.alarmType)
+                    ) >= 0
+                )
+                groupTypes["warning"]++;
+
+            else if ( //경계 관측소 확인
+                o.sensors.FindIndex(
+                    s =>
+                        new int[] {
+                            (int)AlarmState.TH_HIGH,
+                            (int)AlarmState.TH_LOW,
+                        }
+                        .Contains<int>(s.info.alarmType)
+                    ) >= 0
+                )
+                groupTypes["caution"]++;
+
+            Color color =
+                groupTypes["malfunction"] != 0 ? Color.Lerp(Color.blue, Color.red, 0.5f) :
+                groupTypes["warning"] != 0 ? Color.red :
+                groupTypes["caution"] != 0 ? Color.yellow :
+                Color.green;
 
 
 
             txtGroupName.text = obsInfo.nameText;
-            //imgColorableHead.color = color;
-            //imgColorableTail.color = color;
+            imgColorableHead.color = color;
+            imgColorableTail.color = color;
+
+            //이상이 없다면...
+            //크기로 표현
+            if (color == Color.green)
+                imgColorableHead.transform.parent.localScale = Vector3.one * 0.3f;
+            else
+                imgColorableHead.transform.parent.localScale = Vector3.one * 0.6f;
+
 
         }
         private void OnClick()

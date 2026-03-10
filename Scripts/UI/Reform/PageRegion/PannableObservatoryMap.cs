@@ -4,17 +4,21 @@ using DG.Tweening;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Unity.Burst.CompilerServices;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Timeline;
 using UnityEngine.UI;
+using Color = UnityEngine.Color;
 
 namespace Assets.Scripts.UI.Reform.PageHome
 {
-    public class PannableObservatoryMap : MonoBehaviour, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler
+    public class PannableObservatoryMap : MonoBehaviour//, IBeginDragHandler, IEndDragHandler, IDragHandler, IScrollHandler
     {
         //기타 참조
         GameObject itemPrefab => Resources.Load<GameObject>("Reform/PageRegion/MarkerObservatoryMap");
@@ -36,7 +40,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
         float maxHorizontalMoveRange => maxScale * 500f;  // 최대 확대 시 좌우 이동 거리
         float maxVerticalMoveRange => maxScale * 1000f;    // 최대 확대 시 위아래 이동 거리
 
-        bool controlable = true;
+        bool controlable = false;
 
         private Vector3 originalPosition = new Vector3(-50, -100, 0);
         private Vector3 originalScale = new Vector3(1, 1, 1);
@@ -48,15 +52,56 @@ namespace Assets.Scripts.UI.Reform.PageHome
         {
             //markers = transform.Find("MarkerList").GetComponentsInChildren<MarkerRegionMap>(true).ToList();
             imgBackground = transform.Find("MapNationBackground").GetComponent<Image>();
-            crosshairRectTransform = transform.parent.Find("CrosshairObservatory").GetComponent<RectTransform>();
+            //crosshairRectTransform = transform.parent.Find("CrosshairObservatory").GetComponent<RectTransform>();
 
             transform.Find("MapNationBackground").Find("PosRefPoint_1").TryGetComponent(out coordinateAnchor.first);
             transform.Find("MapNationBackground").Find("PosRefPoint_2").TryGetComponent(out coordinateAnchor.second);
 
             UiManager.Instance.Register(UiEventType.Initiate, OnInitiate);
             UiManager.Instance.Register(UiEventType.SelectObs, OnSelectObs);
+            UiManager.Instance.Register(UiEventType.SelectRegion, OnSelectGroup);
         }
 
+        private void OnSelectGroup(object obj)
+        {
+            if (obj is not int groupIdx) throw new Exception("Not allowed Type for Payload of this event");
+
+            float toScale = 3;
+
+            //좌표 계산용 빈 오브젝트
+            GameObject go = new GameObject();
+            go.AddComponent<RectTransform>();
+            go.transform.SetParent(transform.Find("MapNationBackground"));
+
+            //그룹 좌표로 이동
+            System.Numerics.Vector2 coordinate = modelProvider.GetGroups().Find(group => group.groupIdx == groupIdx)?.coordinate ?? System.Numerics.Vector2.Zero;
+            Vector2 coord = CoordinateToLocalPosition(new Vector2(coordinate.X, coordinate.Y));
+
+
+            //toPos 계산
+            Vector3 fromPos = GetComponent<RectTransform>().position;
+            float fromScale = GetComponent<RectTransform>().localScale.x;
+
+
+            go.transform.localPosition = new Vector3(coord.x, coord.y, 0f) * toScale/fromScale;
+
+
+            Vector3 toPos = new Vector3(Screen.width/2f, Screen.height/2f, 0f) - go.GetComponent<RectTransform>().position + fromPos + new Vector3(-45,-300);
+
+            //애니메이션
+
+            DOTween.To(() => fromPos, x => fromPos = x, toPos, 0.5f).OnUpdate(() =>
+            {
+                GetComponent<RectTransform>().position = fromPos;
+            });
+
+            DOTween.To(() => fromScale, x => fromScale = x, toScale, 0.5f).OnUpdate(() =>
+            {
+                GetComponent<RectTransform>().localScale = new Vector3(fromScale, fromScale, fromScale);
+            });
+
+            Destroy(go);
+        }
 
         private void OnInitiate(object obj)
         {
@@ -94,11 +139,11 @@ namespace Assets.Scripts.UI.Reform.PageHome
                 });
             });
 
-            UiManager.Instance.Register(UiEventType.SelectObs, n =>
-            {
-                OnEndDrag(null);
-                //lockingJob = null;
-            });
+            //UiManager.Instance.Register(UiEventType.SelectObs, n =>
+            //{
+            //    OnEndDrag(null);
+            //    //lockingJob = null;
+            //});
         }
         private void OnSelectObs(object obj)
         {

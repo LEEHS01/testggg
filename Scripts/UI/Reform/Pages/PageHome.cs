@@ -20,8 +20,15 @@ namespace Assets.Scripts.UI.Reform.Pages
         const float MAP_MOVE_DURATION = 0.3f;
 
         PannableRegionMap regionMap;
-        public Vector3 positionValue => regionMap.GetComponent<RectTransform>().position;
-        public float scaleValue => regionMap.GetComponent<RectTransform>().localScale.x;
+        public Vector3 positionValue { 
+            get => regionMap.GetComponent<RectTransform>().position; 
+            set => regionMap.GetComponent<RectTransform>().position = value; 
+        }
+        public float scaleValue
+        {
+            get => regionMap.GetComponent<RectTransform>().localScale.x;
+            set => regionMap.GetComponent<RectTransform>().localScale = new Vector3(value, value, value);
+        }
 
         FadingPageComponent fadingComponent;
 
@@ -51,13 +58,17 @@ namespace Assets.Scripts.UI.Reform.Pages
             {
                 PageRegion pageRegion = transform.parent.GetComponentInChildren<PageRegion>(true);
 
+                //초기화
+                this.positionValue = new Vector3(960, 540, 0);
+                this.scaleValue = 1f;
+
                 var positionValue = this.positionValue;
                 var scaleValue = this.scaleValue;
 
                 regionMap.GetComponent<RectTransform>().position = pageRegion.positionValue;
                 regionMap.GetComponent<RectTransform>().localScale = Vector3.one * pageRegion.scaleValue;
 
-                //regionMap.SetAnimation(-1,positionValue, scaleValue, MAP_MOVE_DURATION);
+                regionMap.SetAnimation(-1, positionValue, scaleValue, MAP_MOVE_DURATION);
             }
         }
 

@@ -240,7 +240,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
         }
 
 
-        public Vector3 ClampPosition(Vector3 position)
+        Vector3 ClampPosition(Vector3 position)
         {
             float scale = (panelRectTransform.localScale.x - minScale) / (maxScale - minScale);
             float horizontalMoveRange = Mathf.Lerp(0, maxHorizontalMoveRange, scale);

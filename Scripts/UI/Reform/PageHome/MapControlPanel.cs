@@ -39,7 +39,7 @@ namespace Assets.Scripts.UI.Reform.PageHome
             if (regionMap == null) return;
 
             RectTransform rt = regionMap.GetComponent<RectTransform>();
-            Vector3 target = regionMap.ClampPosition(rt.localPosition + direction * moveAmount);
+            Vector3 target = rt.localPosition + direction * moveAmount;
             rt.DOLocalMove(target, moveDuration).SetEase(Ease.OutQuad);
         }
         #endregion
